@@ -3,61 +3,61 @@ import {
   ExecutionResult,
   OperationDefinitionNode,
   print,
-} from "graphql"
-import { ISourcingContext } from "../../types"
+} from "graphql";
+import { ISourcingContext } from "../../types";
 import {
   IPaginationAdapter,
   PaginationAdapters,
-} from "../../config/pagination-adapters"
+} from "../../config/pagination-adapters";
 import {
   findPaginatedFieldPath,
   getFirstValueByPath,
   updateFirstValueByPath,
-} from "../utils/field-path-utils"
-import { MAX_QUERY_PAGES } from "../../constants"
-import { inspect } from "util"
-import { isOperation } from "../../utils/ast-predicates"
+} from "../utils/field-path-utils";
+import { MAX_QUERY_PAGES } from "../../constants";
+import { inspect } from "util";
+import { isOperation } from "../../utils/ast-predicates";
 
 interface IPaginationPlan {
-  document: DocumentNode
-  operationName: string
-  variables: object
-  fieldPath: string[]
-  fieldName: string
-  adapter: IPaginationAdapter<any, any>
+  document: DocumentNode;
+  operationName: string;
+  variables: object;
+  fieldPath: string[];
+  fieldName: string;
+  adapter: IPaginationAdapter<any, any>;
 }
 
 interface IPage {
-  result: ExecutionResult
-  fieldValue: unknown
-  variables: object
+  result: ExecutionResult;
+  fieldValue: unknown;
+  variables: object;
 }
 
 export async function* paginate(
   context: ISourcingContext,
   plan: IPaginationPlan
 ): AsyncIterable<IPage> {
-  const query = print(plan.document)
-  let pageInfo: any = plan.adapter.start()
-  let currentPage = 0
+  const query = print(plan.document);
+  let pageInfo: any = plan.adapter.start();
+  let currentPage = 0;
 
   while (pageInfo.hasNextPage) {
-    const variables = { ...plan.variables, ...pageInfo.variables }
+    const variables = { ...plan.variables, ...pageInfo.variables };
 
     const result = await context.execute({
       query,
       document: plan.document,
       operationName: plan.operationName,
       variables,
-    })
+    });
 
     if (!result.data) {
-      let message = `Failed to execute query ${plan.operationName}.\n`
+      let message = `Failed to execute query ${plan.operationName}.\n`;
       if (result.errors?.length) {
-        message += `Errors:\n`
-        message += result.errors.map(err => err.message).join(`\n\n`)
+        message += `Errors:\n`;
+        message += result.errors.map((err) => err.message).join(`\n\n`);
       }
-      throw new Error(message)
+      throw new Error(message);
     }
 
     if (currentPage++ > MAX_QUERY_PAGES) {
@@ -66,13 +66,13 @@ export async function* paginate(
         `Query ${plan.operationName} exceeded allowed maximum number of pages: ${currentPage}\n` +
           `  Pagination: ${plan.adapter.name}\n` +
           `  Last variables: ${inspect(variables)}`
-      )
+      );
     }
 
-    const page = getFirstValueByPath(result.data, plan.fieldPath)
-    pageInfo = plan.adapter.next(pageInfo, page)
+    const page = getFirstValueByPath(result.data, plan.fieldPath);
+    pageInfo = plan.adapter.next(pageInfo, page);
 
-    yield { result, fieldValue: page, variables }
+    yield { result, fieldValue: page, variables };
   }
 }
 
@@ -80,20 +80,20 @@ export async function combinePages(
   pages: AsyncIterable<IPage>,
   plan: IPaginationPlan
 ): Promise<ExecutionResult | void> {
-  let result: ExecutionResult | void
-  let combinedFieldValue: unknown
+  let result: ExecutionResult | void;
+  let combinedFieldValue: unknown;
 
   for await (const page of pages) {
     combinedFieldValue = combinedFieldValue
       ? plan.adapter.concat(combinedFieldValue, page.fieldValue)
-      : page.fieldValue
-    result = page.result
+      : page.fieldValue;
+    result = page.result;
   }
   if (!result || !result.data) {
-    return undefined
+    return undefined;
   }
-  updateFirstValueByPath(result.data, plan.fieldPath, combinedFieldValue)
-  return result
+  updateFirstValueByPath(result.data, plan.fieldPath, combinedFieldValue);
+  return result;
 }
 
 export function planPagination(
@@ -107,16 +107,16 @@ export function planPagination(
     operationName,
     variables,
     context.paginationAdapters
-  )
-  const fieldPath = findPaginatedFieldPath(document, operationName, adapter)
-  const fieldName = fieldPath[fieldPath.length - 1]
+  );
+  const fieldPath = findPaginatedFieldPath(document, operationName, adapter);
+  const fieldName = fieldPath[fieldPath.length - 1];
 
   if (!fieldName) {
     throw new Error(
       `Cannot find field to paginate in the query ${operationName}. ` +
         `Make sure you spread IDFragment in your source query:\n` +
         ` query ${operationName} { field { ...IDFragment } }`
-    )
+    );
   }
 
   return {
@@ -126,7 +126,7 @@ export function planPagination(
     adapter,
     fieldName,
     fieldPath,
-  }
+  };
 }
 
 export function resolvePaginationAdapter(
@@ -135,56 +135,56 @@ export function resolvePaginationAdapter(
   customVariables: object = {},
   paginationAdapters: IPaginationAdapter<any, any>[] = PaginationAdapters
 ): IPaginationAdapter<any, any> {
-  const queryNode = findQueryDefinitionNode(document, operationName)
+  const queryNode = findQueryDefinitionNode(document, operationName);
 
   // All variable names, including pagination variables and custom query variables
   const variableNames =
     queryNode.variableDefinitions?.map(
-      variable => variable.variable.name.value
-    ) ?? []
+      (variable) => variable.variable.name.value
+    ) ?? [];
 
-  const customVariableNames = Object.keys(customVariables)
+  const customVariableNames = Object.keys(customVariables);
 
   const restVariableNames = variableNames.filter(
-    name => !customVariableNames.includes(name)
-  )
-  const restVariableSet = new Set(restVariableNames)
+    (name) => !customVariableNames.includes(name)
+  );
+  const restVariableSet = new Set(restVariableNames);
   const adapter = paginationAdapters.find(
-    s =>
+    (s) =>
       s.expectedVariableNames.length === restVariableNames.length &&
-      s.expectedVariableNames.every(name => restVariableSet.has(name))
-  )
+      s.expectedVariableNames.every((name) => restVariableSet.has(name))
+  );
   if (!adapter) {
     throw new Error(
       `Could not resolve pagination adapter for the query ${operationName}`
-    )
+    );
   }
 
-  return adapter
+  return adapter;
 }
 
 export function findQueryDefinitionNode(
   document: DocumentNode,
   operationName: string
 ): OperationDefinitionNode {
-  const operations = document.definitions.filter(isOperation)
-  const queryNode = operations.find(op => op.name?.value === operationName)
+  const operations = document.definitions.filter(isOperation);
+  const queryNode = operations.find((op) => op.name?.value === operationName);
 
   if (!queryNode) {
-    const documentName = document.loc?.source.name
+    const documentName = document.loc?.source.name;
     if (documentName) {
       throw new Error(
         `Query ${operationName} not found in the ${documentName}.`
-      )
+      );
     } else {
       const otherQueries = operations
-        .map(op => op.name?.value ?? `UnnamedQuery`)
-        .join(`,`)
+        .map((op) => op.name?.value ?? `UnnamedQuery`)
+        .join(`,`);
       throw new Error(
         `Query ${operationName} not found in the GraphQL document. ` +
           `Queries found in this document: ${otherQueries}`
-      )
+      );
     }
   }
-  return queryNode
+  return queryNode;
 }

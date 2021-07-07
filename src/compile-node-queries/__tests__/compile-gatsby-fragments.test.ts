@@ -1,7 +1,7 @@
-import { buildSchema } from "graphql"
-import { dedent, printFragment } from "../../__tests__/test-utils"
-import { IGatsbyNodeConfig } from "../../types"
-import { compileGatsbyFragments } from "../compile-gatsby-fragments"
+import { buildSchema } from "graphql";
+import { dedent, printFragment } from "../../__tests__/test-utils";
+import { IGatsbyNodeConfig } from "../../types";
+import { compileGatsbyFragments } from "../compile-gatsby-fragments";
 
 const schema = buildSchema(`
   enum FooBarEnum {
@@ -49,11 +49,11 @@ const schema = buildSchema(`
     allFoo(limit: Int = 10 offset: Int = 0): [Foo]
     allBar(page: Page): BarConnection
   }
-`)
+`);
 
 const nodeTypes: {
-  Foo: IGatsbyNodeConfig
-  Bar: IGatsbyNodeConfig
+  Foo: IGatsbyNodeConfig;
+  Bar: IGatsbyNodeConfig;
 } = {
   Foo: {
     remoteTypeName: `Foo`,
@@ -69,7 +69,7 @@ const nodeTypes: {
       fragment BarId on Bar { testId }
     `,
   },
-}
+};
 
 it(`works without custom fragments`, () => {
   const fragmentDoc = compileGatsbyFragments({
@@ -77,10 +77,10 @@ it(`works without custom fragments`, () => {
     gatsbyTypePrefix: `Test!`,
     gatsbyNodeTypes: [nodeTypes.Foo, nodeTypes.Bar],
     customFragments: [],
-  })
+  });
 
-  expect(fragmentDoc.definitions.length).toEqual(0)
-})
+  expect(fragmentDoc.definitions.length).toEqual(0);
+});
 
 it(`prefixes type names in fragment type condition`, () => {
   const fragments = compileGatsbyFragments({
@@ -88,15 +88,15 @@ it(`prefixes type names in fragment type condition`, () => {
     gatsbyNodeTypes: [nodeTypes.Foo],
     gatsbyTypePrefix: `Test`,
     customFragments: [`fragment Foo on Foo { string }`],
-  })
+  });
 
-  expect(fragments.definitions.length).toEqual(1)
+  expect(fragments.definitions.length).toEqual(1);
   expect(printFragment(fragments, `Foo`)).toEqual(dedent`
     fragment Foo on TestFoo {
       string
     }
-  `)
-})
+  `);
+});
 
 it(`prefixes type names in inline fragment type condition`, () => {
   const fragments = compileGatsbyFragments({
@@ -115,9 +115,9 @@ it(`prefixes type names in inline fragment type condition`, () => {
       }
       `,
     ],
-  })
+  });
 
-  expect(fragments.definitions.length).toEqual(1)
+  expect(fragments.definitions.length).toEqual(1);
   expect(printFragment(fragments, `Foo`)).toEqual(dedent`
     fragment Foo on TestNode {
       ... on TestFoo { string }
@@ -128,8 +128,8 @@ it(`prefixes type names in inline fragment type condition`, () => {
         }
       }
     }
-  `)
-})
+  `);
+});
 
 it(`prefixes connection type names`, () => {
   const fragments = compileGatsbyFragments({
@@ -140,20 +140,20 @@ it(`prefixes connection type names`, () => {
       `fragment Foo on Foo { bars { ... on BarConnection { string } } }`,
       `fragment Bar on BarConnection { nodes { string } }`,
     ],
-  })
+  });
 
-  expect(fragments.definitions.length).toEqual(2)
+  expect(fragments.definitions.length).toEqual(2);
   expect(printFragment(fragments, `Bar`)).toEqual(dedent`
     fragment Bar on TestBarConnection_Remote {
       nodes { string }
     }
-  `)
+  `);
   expect(printFragment(fragments, `Foo`)).toEqual(dedent`
     fragment Foo on TestFoo {
       bars { ... on TestBarConnection_Remote { string } }
     }
-  `)
-})
+  `);
+});
 
 it(`uses aliases as field names`, () => {
   const fragments = compileGatsbyFragments({
@@ -182,9 +182,9 @@ it(`uses aliases as field names`, () => {
         }
       `,
     ],
-  })
+  });
 
-  expect(fragments.definitions.length).toEqual(2)
+  expect(fragments.definitions.length).toEqual(2);
   expect(printFragment(fragments, `Foo`)).toEqual(dedent`
     fragment Foo on TestFoo {
       myString
@@ -194,7 +194,7 @@ it(`uses aliases as field names`, () => {
         }
       }
     }
-  `)
+  `);
   expect(printFragment(fragments, `Bar`)).toEqual(dedent`
     fragment Bar on TestBar {
       myNode {
@@ -202,8 +202,8 @@ it(`uses aliases as field names`, () => {
         ... on TestBar { myBar }
       }
     }
-  `)
-})
+  `);
+});
 
 it(`strips field arguments`, () => {
   const fragments = compileGatsbyFragments({
@@ -219,15 +219,15 @@ it(`strips field arguments`, () => {
       }
     `,
     ],
-  })
+  });
 
-  expect(fragments.definitions.length).toEqual(1)
+  expect(fragments.definitions.length).toEqual(1);
   expect(printFragment(fragments, `Foo`)).toEqual(dedent`
     fragment Foo on TestFoo {
       bars { string }
     }
-  `)
-})
+  `);
+});
 
 it(`strips non-standard directives`, () => {
   const fragments = compileGatsbyFragments({
@@ -243,17 +243,17 @@ it(`strips non-standard directives`, () => {
       }
     `,
     ],
-  })
+  });
 
-  expect(fragments.definitions.length).toEqual(1)
+  expect(fragments.definitions.length).toEqual(1);
   expect(printFragment(fragments, `Foo`)).toEqual(dedent`
     fragment Foo on TestFoo {
       bars {
         string
       }
     }
-  `)
-})
+  `);
+});
 
 it(`preserves standard directives`, () => {
   const fragments = compileGatsbyFragments({
@@ -269,17 +269,17 @@ it(`preserves standard directives`, () => {
       }
     `,
     ],
-  })
+  });
 
-  expect(fragments.definitions.length).toEqual(1)
+  expect(fragments.definitions.length).toEqual(1);
   expect(printFragment(fragments, `Foo`)).toEqual(dedent`
     fragment Foo on TestFoo @include(if: false) {
       bars @skip(if: false) {
         string
       }
     }
-  `)
-})
+  `);
+});
 
-it.todo(`preserves variables within fragments?`)
-it.todo(`preserves pagination arguments?`)
+it.todo(`preserves variables within fragments?`);
+it.todo(`preserves pagination arguments?`);

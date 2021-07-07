@@ -8,46 +8,46 @@ import {
   OperationDefinitionNode,
   SelectionNode,
   visit,
-} from "graphql"
+} from "graphql";
 
 export function isNode(node: unknown): node is ASTNode {
   return (
     typeof node === `object` &&
     node !== null &&
     typeof node[`kind`] === `string`
-  )
+  );
 }
 
 export function isFragment(node: ASTNode): node is FragmentDefinitionNode {
-  return node.kind === "FragmentDefinition"
+  return node.kind === "FragmentDefinition";
 }
 
 export function isOperation(node: ASTNode): node is OperationDefinitionNode {
-  return node.kind === "OperationDefinition"
+  return node.kind === "OperationDefinition";
 }
 
 export function isField(node: ASTNode): node is FieldNode {
-  return node.kind === "Field"
+  return node.kind === "Field";
 }
 
 export function isFragmentSpread(node: ASTNode): node is FragmentSpreadNode {
-  return node.kind === "FragmentSpread"
+  return node.kind === "FragmentSpread";
 }
 
 export function isNonEmptyFragment(
   fragment: DefinitionNode
 ): fragment is FragmentDefinitionNode {
   if (!isFragment(fragment)) {
-    return false
+    return false;
   }
-  let hasFields = false
+  let hasFields = false;
   visit(fragment, {
     Field: () => {
-      hasFields = true
-      return BREAK
+      hasFields = true;
+      return BREAK;
     },
-  })
-  return hasFields
+  });
+  return hasFields;
 }
 
 export function isTypeNameField(selection: SelectionNode): boolean {
@@ -55,5 +55,5 @@ export function isTypeNameField(selection: SelectionNode): boolean {
     selection.kind === "Field" &&
     selection.name.value === `__typename` &&
     !selection.alias
-  )
+  );
 }

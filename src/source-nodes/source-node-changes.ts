@@ -4,12 +4,12 @@ import {
   ISourceChanges,
   ISourcingConfig,
   RemoteTypeName,
-} from "../types"
-import { touchNodes } from "./node-actions/touch-nodes"
-import { fetchNonNullishNodesById } from "./fetch-nodes/fetch-nodes"
-import { createNodes } from "./node-actions/create-nodes"
-import { deleteNodes } from "./node-actions/delete-nodes"
-import { createSourcingContext } from "./sourcing-context"
+} from "../types";
+import { touchNodes } from "./node-actions/touch-nodes";
+import { fetchNonNullishNodesById } from "./fetch-nodes/fetch-nodes";
+import { createNodes } from "./node-actions/create-nodes";
+import { deleteNodes } from "./node-actions/delete-nodes";
+import { createSourcingContext } from "./sourcing-context";
 
 /**
  * Uses sourcing config and a list of node change events (delta) to
@@ -21,39 +21,39 @@ export async function sourceNodeChanges(
   config: ISourcingConfig,
   delta: ISourceChanges
 ) {
-  const context = createSourcingContext(config)
-  const { updates, deletes } = groupChanges(delta)
-  const promises: Promise<void>[] = []
+  const context = createSourcingContext(config);
+  const { updates, deletes } = groupChanges(delta);
+  const promises: Promise<void>[] = [];
 
-  await touchNodes(context)
+  await touchNodes(context);
   for (const [remoteTypeName, ids] of updates) {
-    const nodes = fetchNonNullishNodesById(context, remoteTypeName, ids)
-    const promise = createNodes(context, remoteTypeName, nodes)
-    promises.push(promise)
+    const nodes = fetchNonNullishNodesById(context, remoteTypeName, ids);
+    const promise = createNodes(context, remoteTypeName, nodes);
+    promises.push(promise);
   }
-  await deleteNodes(context, deletes)
-  await Promise.all(promises)
+  await deleteNodes(context, deletes);
+  await Promise.all(promises);
 }
 
 interface IChangeGroups {
-  updates: Map<RemoteTypeName, IRemoteId[]>
-  deletes: INodeDeleteEvent[]
+  updates: Map<RemoteTypeName, IRemoteId[]>;
+  deletes: INodeDeleteEvent[];
 }
 
 function groupChanges(delta: ISourceChanges): IChangeGroups {
-  const updates = new Map<RemoteTypeName, IRemoteId[]>()
-  const deletes: INodeDeleteEvent[] = []
+  const updates = new Map<RemoteTypeName, IRemoteId[]>();
+  const deletes: INodeDeleteEvent[] = [];
 
-  delta.nodeEvents.forEach(event => {
+  delta.nodeEvents.forEach((event) => {
     if (event.eventName === "UPDATE") {
-      const tmp = updates.get(event.remoteTypeName) ?? []
-      tmp.push(event.remoteId)
-      updates.set(event.remoteTypeName, tmp)
+      const tmp = updates.get(event.remoteTypeName) ?? [];
+      tmp.push(event.remoteId);
+      updates.set(event.remoteTypeName, tmp);
     }
     if (event.eventName === "DELETE") {
-      deletes.push(event)
+      deletes.push(event);
     }
-  })
+  });
 
-  return { updates, deletes }
+  return { updates, deletes };
 }

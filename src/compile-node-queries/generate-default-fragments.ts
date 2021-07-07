@@ -1,51 +1,51 @@
 import {
-  visit,
-  print,
-  FieldNode,
-  visitInParallel,
-  visitWithTypeInfo,
-  GraphQLSchema,
-  GraphQLField,
-  GraphQLObjectType,
-  isCompositeType,
-  GraphQLCompositeType,
-  FragmentDefinitionNode,
-  isAbstractType,
-  GraphQLInterfaceType,
-  GraphQLUnionType,
-  getNamedType,
   ArgumentNode,
   astFromValue,
-  isNonNullType,
-  Visitor,
   ASTKindToNode,
+  FieldNode,
+  FragmentDefinitionNode,
   FragmentSpreadNode,
+  getNamedType,
+  GraphQLCompositeType,
+  GraphQLField,
+  GraphQLInterfaceType,
+  GraphQLObjectType,
+  GraphQLSchema,
+  GraphQLUnionType,
+  isAbstractType,
+  isCompositeType,
+  isNonNullType,
+  print,
   TypeInfo,
-} from "graphql"
-import * as GraphQLAST from "../utils/ast-nodes"
+  visit,
+  visitInParallel,
+  Visitor,
+  visitWithTypeInfo,
+} from "graphql";
+import * as GraphQLAST from "../utils/ast-nodes";
 import {
-  IGatsbyNodeConfig,
   FragmentMap,
   IGatsbyFieldAliases,
+  IGatsbyNodeConfig,
   RemoteTypeName,
-} from "../types"
-import { defaultGatsbyFieldAliases } from "../config/default-gatsby-field-aliases"
-import { aliasGatsbyNodeFields } from "./ast-transformers/alias-gatsby-node-fields"
-import { stripWrappingFragments } from "./ast-transformers/strip-wrapping-fragments"
-import { buildNodeReferenceFragmentMap } from "./analyze/build-node-reference-fragment-map"
-import { promptUpgradeIfRequired } from "../utils/upgrade-prompt"
+} from "../types";
+import { defaultGatsbyFieldAliases } from "../config/default-gatsby-field-aliases";
+import { aliasGatsbyNodeFields } from "./ast-transformers/alias-gatsby-node-fields";
+import { stripWrappingFragments } from "./ast-transformers/strip-wrapping-fragments";
+import { buildNodeReferenceFragmentMap } from "./analyze/build-node-reference-fragment-map";
+import { promptUpgradeIfRequired } from "../utils/upgrade-prompt";
 
 export interface IArgumentValueResolver {
   (field: GraphQLField<any, any>, parentType: GraphQLObjectType): void | {
-    [argName: string]: unknown
-  }
+    [argName: string]: unknown;
+  };
 }
 
 export interface IDefaultFragmentsConfig {
-  schema: GraphQLSchema
-  gatsbyNodeTypes: IGatsbyNodeConfig[]
-  gatsbyFieldAliases?: IGatsbyFieldAliases
-  defaultArgumentValues?: IArgumentValueResolver[]
+  schema: GraphQLSchema;
+  gatsbyNodeTypes: IGatsbyNodeConfig[];
+  gatsbyFieldAliases?: IGatsbyFieldAliases;
+  defaultArgumentValues?: IArgumentValueResolver[];
 }
 
 /**
@@ -54,13 +54,13 @@ export interface IDefaultFragmentsConfig {
 export function generateDefaultFragments(
   config: IDefaultFragmentsConfig
 ): Map<RemoteTypeName, string> {
-  promptUpgradeIfRequired(config.gatsbyNodeTypes)
+  promptUpgradeIfRequired(config.gatsbyNodeTypes);
 
-  const result = new Map<RemoteTypeName, string>()
+  const result = new Map<RemoteTypeName, string>();
   for (const [name, fragment] of generateDefaultFragmentNodes(config)) {
-    result.set(name, print(fragment))
+    result.set(name, print(fragment));
   }
-  return result
+  return result;
 }
 
 export function generateDefaultFragmentNodes(
@@ -78,55 +78,55 @@ export function generateDefaultFragmentNodes(
     ),
     fragmentMap: buildTypeFragmentMap(config),
     nodeReferenceFragmentMap: buildNodeReferenceFragmentMap(config),
-  }
-  const nodeFragments: Map<string, FragmentDefinitionNode> = new Map()
+  };
+  const nodeFragments: Map<string, FragmentDefinitionNode> = new Map();
   for (const nodeConfig of config.gatsbyNodeTypes) {
     nodeFragments.set(
       nodeConfig.remoteTypeName,
       generateDefaultFragment(context, nodeConfig)
-    )
+    );
   }
-  return nodeFragments
+  return nodeFragments;
 }
 
 interface IGenerateDefaultFragmentContext {
-  schema: GraphQLSchema
-  gatsbyFieldAliases: IGatsbyFieldAliases
-  fragmentMap: FragmentMap
-  nodeReferenceFragmentMap: FragmentMap
-  gatsbyNodeTypes: Map<RemoteTypeName, IGatsbyNodeConfig>
+  schema: GraphQLSchema;
+  gatsbyFieldAliases: IGatsbyFieldAliases;
+  fragmentMap: FragmentMap;
+  nodeReferenceFragmentMap: FragmentMap;
+  gatsbyNodeTypes: Map<RemoteTypeName, IGatsbyNodeConfig>;
 }
 
 function generateDefaultFragment(
   context: IGenerateDefaultFragmentContext,
   nodeConfig: IGatsbyNodeConfig
 ): FragmentDefinitionNode {
-  const fragment = context.fragmentMap.get(nodeConfig.remoteTypeName)
+  const fragment = context.fragmentMap.get(nodeConfig.remoteTypeName);
   if (!fragment) {
-    throw new Error(`Unknown remote GraphQL type ${nodeConfig.remoteTypeName}`)
+    throw new Error(`Unknown remote GraphQL type ${nodeConfig.remoteTypeName}`);
   }
 
   // Note:
   //  if some visitor edits a node, the next visitors won't see this node
   //  so conflicts are possible (in this case several passes are required)
-  const typeInfo = new TypeInfo(context.schema)
+  const typeInfo = new TypeInfo(context.schema);
 
   const visitor = visitInParallel([
     inlineNamedFragments(context),
     aliasGatsbyNodeFields({ ...context, typeInfo }),
     stripWrappingFragments(),
-  ])
+  ]);
 
-  return visit(fragment, visitWithTypeInfo(typeInfo, visitor))
+  return visit(fragment, visitWithTypeInfo(typeInfo, visitor));
 }
 
 function inlineNamedFragments(
   args: IGenerateDefaultFragmentContext
 ): Visitor<ASTKindToNode> {
-  const typeStack: string[] = []
+  const typeStack: string[] = [];
   return {
     FragmentSpread: (node: FragmentSpreadNode, _, __) => {
-      const typeName = node.name.value // Assuming fragment name matches type name
+      const typeName = node.name.value; // Assuming fragment name matches type name
 
       if (typeStack.includes(typeName)) {
         // TODO: allow configurable number of nesting levels?
@@ -135,30 +135,31 @@ function inlineNamedFragments(
         return GraphQLAST.field(
           `__typename`,
           args.gatsbyFieldAliases[`__typename`]
-        )
+        );
       }
-      typeStack.push(typeName)
+      typeStack.push(typeName);
 
       const typeFragment =
         args.nodeReferenceFragmentMap.get(typeName) ??
-        args.fragmentMap.get(typeName)
+        args.fragmentMap.get(typeName);
 
       if (!typeFragment) {
-        throw new Error(`Missing fragment for type ${typeName}`)
+        throw new Error(`Missing fragment for type ${typeName}`);
       }
       return GraphQLAST.inlineFragment(
         typeName,
         typeFragment.selectionSet.selections
-      )
+      );
+      // return typeFragment.selectionSet.selections
     },
     InlineFragment: {
       leave() {
         // Corresponding enter is actually in the FragmentSpread above
         // (FragmentSpread has no "leave" because we replace it with inline fragment or remove)
-        typeStack.pop()
+        typeStack.pop();
       },
     },
-  }
+  };
 }
 
 /**
@@ -200,21 +201,21 @@ function inlineNamedFragments(
  * ```
  */
 function buildTypeFragmentMap(config: IDefaultFragmentsConfig): FragmentMap {
-  const typeMap = config.schema.getTypeMap()
-  const fragmentMap = new Map()
+  const typeMap = config.schema.getTypeMap();
+  const fragmentMap = new Map();
 
-  Object.keys(typeMap).forEach(typeName => {
-    const type = typeMap[typeName]
+  Object.keys(typeMap).forEach((typeName) => {
+    const type = typeMap[typeName];
     const fragment = isCompositeType(type)
       ? buildTypeFragment(config, type)
-      : undefined
+      : undefined;
 
     if (fragment) {
-      fragmentMap.set(typeName, fragment)
+      fragmentMap.set(typeName, fragment);
     }
-  })
+  });
 
-  return fragmentMap
+  return fragmentMap;
 }
 
 function buildTypeFragment(
@@ -223,33 +224,33 @@ function buildTypeFragment(
 ): FragmentDefinitionNode {
   return isAbstractType(type)
     ? buildAbstractTypeFragment(context, type)
-    : buildObjectTypeFragment(context, type)
+    : buildObjectTypeFragment(context, type);
 }
 
 function buildAbstractTypeFragment(
   context: IDefaultFragmentsConfig,
   type: GraphQLInterfaceType | GraphQLUnionType
 ) {
-  const fragmentName = getTypeFragmentName(type.name)
+  const fragmentName = getTypeFragmentName(type.name);
   const selections = context.schema
     .getPossibleTypes(type)
-    .map(objectType =>
+    .map((objectType) =>
       GraphQLAST.fragmentSpread(getTypeFragmentName(objectType.name))
-    )
+    );
 
-  return GraphQLAST.fragmentDefinition(fragmentName, type.name, selections)
+  return GraphQLAST.fragmentDefinition(fragmentName, type.name, selections);
 }
 
 function buildObjectTypeFragment(
   context: IDefaultFragmentsConfig,
   type: GraphQLObjectType
 ) {
-  const fragmentName = getTypeFragmentName(type.name)
+  const fragmentName = getTypeFragmentName(type.name);
   const selections = Object.keys(type.getFields())
-    .map(fieldName => buildFieldNode(context, type, fieldName))
-    .filter((node): node is FieldNode => Boolean(node))
+    .map((fieldName) => buildFieldNode(context, type, fieldName))
+    .filter((node): node is FieldNode => Boolean(node));
 
-  return GraphQLAST.fragmentDefinition(fragmentName, type.name, selections)
+  return GraphQLAST.fragmentDefinition(fragmentName, type.name, selections);
 }
 
 function buildFieldNode(
@@ -257,22 +258,22 @@ function buildFieldNode(
   parentType: GraphQLObjectType,
   fieldName: string
 ): FieldNode | void {
-  const field = parentType.getFields()[fieldName]
+  const field = parentType.getFields()[fieldName];
   if (!field) {
-    return
+    return;
   }
-  const type = getNamedType(field.type)
-  const args = resolveFieldArguments(context, parentType, field)
+  const type = getNamedType(field.type);
+  const args = resolveFieldArguments(context, parentType, field);
 
   // Make sure all nonNull args are resolved
   if (someNonNullArgMissing(field, args)) {
-    return
+    return;
   }
   const selections = isCompositeType(type)
     ? [GraphQLAST.fragmentSpread(getTypeFragmentName(type.name))]
-    : undefined
+    : undefined;
 
-  return GraphQLAST.field(fieldName, undefined, args, selections)
+  return GraphQLAST.field(fieldName, undefined, args, selections);
 }
 
 function resolveFieldArguments(
@@ -284,20 +285,20 @@ function resolveFieldArguments(
   // 1. Default argument values for type field
   // 2. Pagination adapters (i.e. limit/offset or first/after, etc)
   if (field.args.length === 0) {
-    return []
+    return [];
   }
-  const defaultArgValueProviders = context.defaultArgumentValues ?? []
+  const defaultArgValueProviders = context.defaultArgumentValues ?? [];
   const argValues = defaultArgValueProviders.reduce(
     (argValues, resolver) =>
       Object.assign(argValues, resolver(field, parentType) ?? {}),
     Object.create(null)
-  )
+  );
   return field.args
-    .map(arg => {
-      const valueNode = astFromValue(argValues[arg.name], arg.type)
-      return valueNode ? GraphQLAST.arg(arg.name, valueNode) : undefined
+    .map((arg) => {
+      const valueNode = astFromValue(argValues[arg.name], arg.type);
+      return valueNode ? GraphQLAST.arg(arg.name, valueNode) : undefined;
     })
-    .filter((arg): arg is ArgumentNode => Boolean(arg))
+    .filter((arg): arg is ArgumentNode => Boolean(arg));
 }
 
 function someNonNullArgMissing(
@@ -305,12 +306,12 @@ function someNonNullArgMissing(
   argNodes: ArgumentNode[]
 ) {
   return field.args.some(
-    arg =>
+    (arg) =>
       isNonNullType(arg.type) &&
-      argNodes.every(argNode => argNode.name.value !== arg.name)
-  )
+      argNodes.every((argNode) => argNode.name.value !== arg.name)
+  );
 }
 
 function getTypeFragmentName(typeName: string): string {
-  return typeName
+  return typeName;
 }

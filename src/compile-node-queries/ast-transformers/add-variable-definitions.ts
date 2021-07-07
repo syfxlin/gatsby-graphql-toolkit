@@ -7,40 +7,40 @@ import {
   GraphQLInputType,
   DocumentNode,
   parseType,
-} from "graphql"
-import * as GraphQLAST from "../../utils/ast-nodes"
+} from "graphql";
+import * as GraphQLAST from "../../utils/ast-nodes";
 
 interface IAddVariableDefinitionsArgs {
-  typeInfo: TypeInfo
+  typeInfo: TypeInfo;
 }
 
-type VariableMap = Map<string, GraphQLInputType>
+type VariableMap = Map<string, GraphQLInputType>;
 
 interface DefinitionInfo {
-  usedFragments: Set<string>
-  variables: VariableMap
+  usedFragments: Set<string>;
+  variables: VariableMap;
 }
 
 export function addVariableDefinitions({
   typeInfo,
 }: IAddVariableDefinitionsArgs): Visitor<ASTKindToNode> {
-  const fragmentInfo = new Map<string, DefinitionInfo>()
-  const operationInfo = new Map<string, DefinitionInfo>()
+  const fragmentInfo = new Map<string, DefinitionInfo>();
+  const operationInfo = new Map<string, DefinitionInfo>();
 
-  let currentDefinition: DefinitionInfo
+  let currentDefinition: DefinitionInfo;
 
   return {
     Document: {
-      leave: node => {
+      leave: (node) => {
         const result: DocumentNode = {
           ...node,
-          definitions: node.definitions.map(def =>
+          definitions: node.definitions.map((def) =>
             def.kind === "OperationDefinition"
               ? ensureVariableDefinitions(def, operationInfo, fragmentInfo)
               : def
           ),
-        }
-        return result
+        };
+        return result;
       },
     },
     OperationDefinition: {
@@ -48,10 +48,10 @@ export function addVariableDefinitions({
         currentDefinition = {
           usedFragments: new Set(),
           variables: new Map(),
-        }
+        };
       },
-      leave: node => {
-        operationInfo.set(node.name?.value ?? ``, currentDefinition)
+      leave: (node) => {
+        operationInfo.set(node.name?.value ?? ``, currentDefinition);
       },
     },
     FragmentDefinition: {
@@ -59,23 +59,23 @@ export function addVariableDefinitions({
         currentDefinition = {
           usedFragments: new Set(),
           variables: new Map(),
-        }
+        };
       },
-      leave: node => {
-        fragmentInfo.set(node.name.value, currentDefinition)
+      leave: (node) => {
+        fragmentInfo.set(node.name.value, currentDefinition);
       },
     },
-    FragmentSpread: node => {
-      currentDefinition.usedFragments.add(node.name.value)
+    FragmentSpread: (node) => {
+      currentDefinition.usedFragments.add(node.name.value);
     },
-    Variable: node => {
-      const inputType = typeInfo.getInputType()
+    Variable: (node) => {
+      const inputType = typeInfo.getInputType();
       // FIXME: throw if no inputType found?
       if (inputType) {
-        currentDefinition.variables.set(node.name.value, inputType)
+        currentDefinition.variables.set(node.name.value, inputType);
       }
     },
-  }
+  };
 }
 
 function ensureVariableDefinitions(
@@ -83,12 +83,12 @@ function ensureVariableDefinitions(
   operationInfo: Map<string, DefinitionInfo>,
   fragmentsInfo: Map<string, DefinitionInfo>
 ) {
-  const name = node.name?.value ?? ``
-  const variables = collectVariables(operationInfo.get(name), fragmentsInfo)
+  const name = node.name?.value ?? ``;
+  const variables = collectVariables(operationInfo.get(name), fragmentsInfo);
   if (!variables.size) {
-    return node
+    return node;
   }
-  const variableDefinitions: VariableDefinitionNode[] = []
+  const variableDefinitions: VariableDefinitionNode[] = [];
   for (const [name, inputType] of variables) {
     variableDefinitions.push({
       kind: "VariableDefinition",
@@ -97,12 +97,12 @@ function ensureVariableDefinitions(
         name: GraphQLAST.name(name),
       },
       type: parseType(inputType.toString()),
-    })
+    });
   }
   return {
     ...node,
     variableDefinitions,
-  }
+  };
 }
 
 function collectVariables(
@@ -111,18 +111,18 @@ function collectVariables(
   visited: Set<DefinitionInfo> = new Set()
 ): VariableMap {
   if (!definitionInfo || visited.has(definitionInfo)) {
-    return new Map()
+    return new Map();
   }
-  visited.add(definitionInfo)
-  const variables = [...definitionInfo.variables]
+  visited.add(definitionInfo);
+  const variables = [...definitionInfo.variables];
 
   for (const fragmentName of definitionInfo.usedFragments) {
     const fragmentVariables = collectVariables(
       fragmentsInfo.get(fragmentName),
       fragmentsInfo,
       visited
-    )
-    variables.push(...fragmentVariables)
+    );
+    variables.push(...fragmentVariables);
   }
-  return new Map(variables)
+  return new Map(variables);
 }

@@ -1,6 +1,6 @@
-import { buildSchema } from "graphql"
-import { dedent, printQuery } from "../test-utils"
-import { compileNodeQueries } from "../../compile-node-queries"
+import { buildSchema } from "graphql";
+import { dedent, printQuery } from "../test-utils";
+import { compileNodeQueries } from "../../compile-node-queries";
 
 // See https://github.com/vladar/gatsby-graphql-toolkit/issues/11
 
@@ -21,7 +21,7 @@ const schema = buildSchema(`
     fooNodes: [Foo]
     barNodes: [Bar]
   }
-`)
+`);
 
 const gatsbyNodeTypes = [
   {
@@ -42,7 +42,7 @@ const gatsbyNodeTypes = [
       fragment BarId on Bar { __typename sys { id } }
     `,
   },
-]
+];
 
 it(`should remove redundant fragments`, async () => {
   const documents = await compileNodeQueries({
@@ -64,7 +64,7 @@ it(`should remove redundant fragments`, async () => {
         }
       }`,
     ],
-  })
+  });
 
   expect(printQuery(documents, `Bar`)).toEqual(dedent`
     query LIST_Bar {
@@ -95,5 +95,5 @@ it(`should remove redundant fragments`, async () => {
     #     id
     #   }
     # }
-  `)
-})
+  `);
+});

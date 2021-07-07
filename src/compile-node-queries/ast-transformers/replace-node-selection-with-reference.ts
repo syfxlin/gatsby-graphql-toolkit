@@ -10,16 +10,16 @@ import {
   SelectionNode,
   GraphQLObjectType,
   FragmentDefinitionNode,
-} from "graphql"
-import { FragmentMap } from "../../types"
-import * as GraphQLAST from "../../utils/ast-nodes"
-import { isTypeNameField } from "../../utils/ast-predicates"
+} from "graphql";
+import { FragmentMap } from "../../types";
+import * as GraphQLAST from "../../utils/ast-nodes";
+import { isTypeNameField } from "../../utils/ast-predicates";
 
 interface ITransformArgs {
-  schema: GraphQLSchema
-  typeInfo: TypeInfo
-  originalCustomFragments: FragmentDefinitionNode[]
-  nodeReferenceFragmentMap: FragmentMap
+  schema: GraphQLSchema;
+  typeInfo: TypeInfo;
+  originalCustomFragments: FragmentDefinitionNode[];
+  nodeReferenceFragmentMap: FragmentMap;
 }
 
 /**
@@ -44,22 +44,22 @@ export function replaceNodeSelectionWithReference(
   args: ITransformArgs
 ): Visitor<ASTKindToNode> {
   return {
-    Field: node => {
-      const type = args.typeInfo.getType()
+    Field: (node) => {
+      const type = args.typeInfo.getType();
       if (!type || !node.selectionSet?.selections.length) {
-        return
+        return;
       }
-      const namedType = getNamedType(type)
-      const fragment = args.nodeReferenceFragmentMap.get(namedType.name)
+      const namedType = getNamedType(type);
+      const fragment = args.nodeReferenceFragmentMap.get(namedType.name);
       if (fragment) {
-        return { ...node, selectionSet: fragment.selectionSet }
+        return { ...node, selectionSet: fragment.selectionSet };
       }
       if (isInterfaceType(namedType)) {
-        return transformInterfaceField(args, node, namedType)
+        return transformInterfaceField(args, node, namedType);
       }
-      return
+      return;
     },
-  }
+  };
 }
 
 function transformInterfaceField(
@@ -67,31 +67,35 @@ function transformInterfaceField(
   node: FieldNode,
   type: GraphQLInterfaceType
 ): FieldNode | undefined {
-  const possibleTypes = args.schema.getPossibleTypes(type)
-  const nodeImplementations = possibleTypes.some(type =>
+  const possibleTypes = args.schema.getPossibleTypes(type);
+  const nodeImplementations = possibleTypes.some((type) =>
     args.nodeReferenceFragmentMap.has(type.name)
-  )
+  );
   if (!nodeImplementations) {
-    return
+    return;
   }
   // Replace with inline fragment for each implementation
   const selections: SelectionNode[] = possibleTypes
-    .map(type => {
-      const nodeReferenceFragment = args.nodeReferenceFragmentMap.get(type.name)
+    .map((type) => {
+      const nodeReferenceFragment = args.nodeReferenceFragmentMap.get(
+        type.name
+      );
       const inlineFragmentSelections = nodeReferenceFragment
         ? nodeReferenceFragment.selectionSet.selections
-        : filterTypeSelections(args, node.selectionSet?.selections, type)
+        : filterTypeSelections(args, node.selectionSet?.selections, type);
 
       // Filter out __typename field from inline fragments because we add it to the field itself below
       //   (just a prettify thing)
       return GraphQLAST.inlineFragment(
         type.name,
         inlineFragmentSelections.filter(
-          selection => !isTypeNameField(selection)
+          (selection) => !isTypeNameField(selection)
         )
-      )
+      );
     })
-    .filter(inlineFragment => inlineFragment.selectionSet.selections.length > 0)
+    .filter(
+      (inlineFragment) => inlineFragment.selectionSet.selections.length > 0
+    );
 
   return {
     ...node,
@@ -99,7 +103,7 @@ function transformInterfaceField(
       kind: "SelectionSet",
       selections: [GraphQLAST.field(`__typename`), ...selections],
     },
-  }
+  };
 }
 
 function filterTypeSelections(
@@ -108,23 +112,23 @@ function filterTypeSelections(
   type: GraphQLObjectType
 ): Array<SelectionNode> {
   // @ts-ignore
-  return selections.filter(selection => {
+  return selections.filter((selection) => {
     if (selection.kind === `Field`) {
       // Every field selected on interface type already exists
       // on implementing object type
-      return true
+      return true;
     }
     if (selection.kind === `InlineFragment`) {
-      const typeName = selection.typeCondition?.name.value
-      return !typeName || typeName === type.name
+      const typeName = selection.typeCondition?.name.value;
+      return !typeName || typeName === type.name;
     }
     if (selection.kind === `FragmentSpread`) {
-      const fragmentName = selection.name.value
+      const fragmentName = selection.name.value;
       const fragment = args.originalCustomFragments.find(
-        def => def.name.value === fragmentName
-      )
-      return fragment && fragment.typeCondition.name.value === type.name
+        (def) => def.name.value === fragmentName
+      );
+      return fragment && fragment.typeCondition.name.value === type.name;
     }
-    return false
-  })
+    return false;
+  });
 }

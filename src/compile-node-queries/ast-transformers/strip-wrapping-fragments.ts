@@ -1,4 +1,9 @@
-import { SelectionSetNode, Visitor, ASTKindToNode } from "graphql"
+import {
+  ASTKindToNode,
+  SelectionNode,
+  SelectionSetNode,
+  Visitor,
+} from "graphql";
 
 /**
  * Strip unnecessary wrapping (just a prettify)
@@ -9,20 +14,32 @@ export function stripWrappingFragments(): Visitor<ASTKindToNode> {
   return {
     SelectionSet: {
       leave: (node: SelectionSetNode) => {
-        if (
-          node.selections.length !== 1 ||
-          node.selections[0].kind !== "InlineFragment"
-        ) {
-          return
+        // if (
+        //   node.selections.length !== 1 ||
+        //   node.selections[0].kind !== "InlineFragment"
+        // ) {
+        //   return
+        // }
+        // const inlineFragment = node.selections[0]
+        // const isWrapper = inlineFragment.selectionSet.selections.every(
+        //   selection =>
+        //     selection.kind === "FragmentSpread" ||
+        //     selection.kind === "InlineFragment"
+        // )
+        // return isWrapper ? inlineFragment.selectionSet : undefined
+        const fields: SelectionNode[] = [];
+        for (const selection of node.selections) {
+          if (selection.kind === "InlineFragment") {
+            fields.push(...selection.selectionSet.selections);
+          } else {
+            fields.push(selection);
+          }
         }
-        const inlineFragment = node.selections[0]
-        const isWrapper = inlineFragment.selectionSet.selections.every(
-          selection =>
-            selection.kind === "FragmentSpread" ||
-            selection.kind === "InlineFragment"
-        )
-        return isWrapper ? inlineFragment.selectionSet : undefined
+        return {
+          kind: "SelectionSet",
+          selections: fields,
+        };
       },
     },
-  }
+  };
 }

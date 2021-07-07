@@ -1,11 +1,11 @@
-import * as path from "path"
-import * as fs from "fs-extra"
-import { DocumentNode, Source, print } from "graphql"
-import { GraphQLSource, RemoteTypeName } from "../types"
+import * as path from "path";
+import * as fs from "fs-extra";
+import { DocumentNode, Source, print } from "graphql";
+import { GraphQLSource, RemoteTypeName } from "../types";
 import {
   IDefaultFragmentsConfig,
   generateDefaultFragments,
-} from "./generate-default-fragments"
+} from "./generate-default-fragments";
 
 /**
  * Utility function that tries to load fragments from given path
@@ -15,23 +15,23 @@ export async function readOrGenerateDefaultFragments(
   fragmentsDir: string,
   config: IDefaultFragmentsConfig
 ): Promise<Map<RemoteTypeName, GraphQLSource>> {
-  const defaultFragments = generateDefaultFragments(config)
-  const result = new Map<RemoteTypeName, GraphQLSource>()
+  const defaultFragments = generateDefaultFragments(config);
+  const result = new Map<RemoteTypeName, GraphQLSource>();
 
-  await fs.ensureDir(fragmentsDir)
+  await fs.ensureDir(fragmentsDir);
   for (const [remoteTypeName, fragment] of defaultFragments) {
-    const fileName = path.join(fragmentsDir, `${remoteTypeName}.graphql`)
-    let source
+    const fileName = path.join(fragmentsDir, `${remoteTypeName}.graphql`);
+    let source;
     try {
-      source = new Source(fs.readFileSync(fileName).toString(), fileName)
+      source = new Source(fs.readFileSync(fileName).toString(), fileName);
     } catch (e) {
-      fs.writeFileSync(fileName, fragment)
-      source = new Source(fragment, fileName)
+      fs.writeFileSync(fileName, fragment);
+      source = new Source(fragment, fileName);
     }
-    result.set(remoteTypeName, source)
+    result.set(remoteTypeName, source);
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -40,7 +40,10 @@ export async function readOrGenerateDefaultFragments(
  * @param fileName the name of javascript file to write the fragments to. can also include a path
  * @param fragmentsDoc the compiled gatsby fragments
  */
-export async function writeGatsbyFragments(fileName: string, fragmentsDoc: DocumentNode) {
+export async function writeGatsbyFragments(
+  fileName: string,
+  fragmentsDoc: DocumentNode
+) {
   await fs.ensureFile(fileName);
 
   const renderFragment = (def) => `
@@ -63,11 +66,11 @@ export async function writeCompiledQueries(
   outputDir: string,
   compiledQueries: Map<RemoteTypeName, DocumentNode>
 ) {
-  await fs.ensureDir(outputDir)
+  await fs.ensureDir(outputDir);
   for (const [remoteTypeName, document] of compiledQueries) {
     await fs.writeFile(
       outputDir + `/${remoteTypeName}.graphql`,
       print(document)
-    )
+    );
   }
 }

@@ -1,4 +1,4 @@
-import { IPaginationAdapter } from "./types"
+import { IPaginationAdapter } from "./types";
 
 export const NoPagination: IPaginationAdapter<unknown[], unknown> = {
   name: "NoPagination",
@@ -7,18 +7,18 @@ export const NoPagination: IPaginationAdapter<unknown[], unknown> = {
     return {
       variables: {},
       hasNextPage: true,
-    }
+    };
   },
   next() {
     return {
       variables: {},
       hasNextPage: false,
-    }
+    };
   },
   concat(result) {
-    return result
+    return result;
   },
   getItems(pageOrResult) {
-    return pageOrResult
+    return pageOrResult;
   },
-}
+};

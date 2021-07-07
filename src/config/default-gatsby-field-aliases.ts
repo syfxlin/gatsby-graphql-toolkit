@@ -1,4 +1,4 @@
-import { IGatsbyFieldAliases } from "../types"
+import { IGatsbyFieldAliases } from "../types";
 
 export const defaultGatsbyFieldAliases: IGatsbyFieldAliases = {
   __typename: "remoteTypeName",
@@ -7,4 +7,4 @@ export const defaultGatsbyFieldAliases: IGatsbyFieldAliases = {
   children: "remoteChildren",
   parent: "remoteParent",
   fields: "remoteFields",
-}
+};

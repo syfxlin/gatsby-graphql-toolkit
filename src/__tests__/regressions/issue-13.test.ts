@@ -1,14 +1,14 @@
-import { buildSchema } from "graphql"
-import { dedent, printQuery, gatsbyApi } from "../test-utils"
+import { buildSchema } from "graphql";
+import { dedent, gatsbyApi, printQuery } from "../test-utils";
 import {
   buildNodeDefinitions,
-  createSourcingContext,
   compileNodeQueries,
-  fetchNodeList,
+  createSourcingContext,
   fetchNodeById,
+  fetchNodeList,
   LimitOffset,
-} from "../.."
-import { IRemoteNode } from "../../types"
+} from "../..";
+import { IRemoteNode } from "../../types";
 
 // See https://github.com/vladar/gatsby-graphql-toolkit/issues/13
 
@@ -26,7 +26,7 @@ const schema = buildSchema(`
     foo(input: FooInput): Foo
     allFoo(input: FooInput): [Foo]
   }
-`)
+`);
 
 const gatsbyNodeTypes = [
   {
@@ -41,19 +41,19 @@ const gatsbyNodeTypes = [
       fragment _FooId_ on Foo { __typename id }
     `,
   },
-]
+];
 
 const documents = compileNodeQueries({
   schema,
   gatsbyNodeTypes,
   customFragments: [],
-})
+});
 
 const fooNode = {
   remoteTypeName: `Foo`,
   remoteId: `1`,
   foo: `fooString`,
-}
+};
 
 it(`adds variable declarations for variables within input objects`, async () => {
   expect(printQuery(documents, `Foo`)).toEqual(dedent`
@@ -75,8 +75,8 @@ it(`adds variable declarations for variables within input objects`, async () => 
       remoteTypeName: __typename
       remoteId: id
     }
-  `)
-})
+  `);
+});
 
 it(`correctly detects field to paginate in list query`, async () => {
   const context = createSourcingContext({
@@ -86,21 +86,21 @@ it(`correctly detects field to paginate in list query`, async () => {
     gatsbyApi,
     gatsbyTypePrefix: `Test`,
     paginationAdapters: [LimitOffset],
-  })
+  });
 
   const fetchNodes = async () => {
-    const nodes: IRemoteNode[] = []
+    const nodes: IRemoteNode[] = [];
     for await (const node of fetchNodeList(context, `Foo`, `LIST_FOO`)) {
-      nodes.push(node)
+      nodes.push(node);
     }
-    return nodes
-  }
+    return nodes;
+  };
 
   // Without the fix it throws:
   // Cannot find field to paginate in the query LIST_FOO. Make sure you spread IDFragment in your source query:
   //  query LIST_FOO { field { ...IDFragment } }
-  await expect(fetchNodes()).resolves.toEqual([fooNode])
-})
+  await expect(fetchNodes()).resolves.toEqual([fooNode]);
+});
 
 it(`correctly detects node field in node query`, async () => {
   const context = createSourcingContext({
@@ -110,13 +110,13 @@ it(`correctly detects node field in node query`, async () => {
     gatsbyApi,
     gatsbyTypePrefix: `Test`,
     paginationAdapters: [LimitOffset],
-  })
+  });
 
   // Without the fix it throws:
   //   Value of the ID field "remoteTypeName" can't be nullish. Got object with keys: foo
   const fooId = {
     remoteTypeName: fooNode.remoteTypeName,
     remoteId: fooNode.remoteId,
-  }
-  await expect(fetchNodeById(context, `Foo`, fooId)).resolves.toEqual(fooNode)
-})
+  };
+  await expect(fetchNodeById(context, `Foo`, fooId)).resolves.toEqual(fooNode);
+});

@@ -1,22 +1,22 @@
-import { SelectionNode, SelectionSetNode } from "graphql"
+import { SelectionNode, SelectionSetNode } from "graphql";
 
 export function selectionSetIncludes(
   selectionSet: SelectionSetNode | void,
   possibleSubset: SelectionSetNode | void
 ): boolean {
   if (selectionSet === possibleSubset) {
-    return true
+    return true;
   }
   if (!selectionSet || !possibleSubset) {
-    return false
+    return false;
   }
   // Perf:
   if (possibleSubset.selections.length > selectionSet.selections.length) {
-    return false
+    return false;
   }
-  return possibleSubset.selections.every(a =>
-    selectionSet.selections.some(b => selectionIncludes(b, a))
-  )
+  return possibleSubset.selections.every((a) =>
+    selectionSet.selections.some((b) => selectionIncludes(b, a))
+  );
 }
 
 export function selectionIncludes(
@@ -24,16 +24,16 @@ export function selectionIncludes(
   possibleSubset: SelectionNode | void
 ): boolean {
   if (selection === possibleSubset) {
-    return true
+    return true;
   }
   if (!selection || !possibleSubset) {
-    return false
+    return false;
   }
   if (
     selection.kind === "FragmentSpread" &&
     possibleSubset.kind === "FragmentSpread"
   ) {
-    return selection.name.value === possibleSubset.name.value
+    return selection.name.value === possibleSubset.name.value;
   }
   if (
     selection.kind === "InlineFragment" &&
@@ -43,14 +43,14 @@ export function selectionIncludes(
       selection.typeCondition?.name.value ===
         possibleSubset.typeCondition?.name.value &&
       selectionSetIncludes(selection.selectionSet, possibleSubset.selectionSet)
-    )
+    );
   }
   if (selection.kind === "Field" && possibleSubset.kind === "Field") {
     return (
       selection.alias?.value === possibleSubset.alias?.value &&
       selection.name.value === possibleSubset.name.value &&
       selectionSetIncludes(selection.selectionSet, possibleSubset.selectionSet)
-    )
+    );
   }
-  return false
+  return false;
 }

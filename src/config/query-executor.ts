@@ -1,14 +1,14 @@
-import { inspect } from "util"
-import PQueue, { Options as PQueueOptions } from "p-queue"
-import fetch, { RequestInit as FetchOptions } from "node-fetch"
-import { IQueryExecutionArgs, IQueryExecutor } from "../types"
+import { inspect } from "util";
+import PQueue, { Options as PQueueOptions } from "p-queue";
+import fetch, { RequestInit as FetchOptions } from "node-fetch";
+import { IQueryExecutionArgs, IQueryExecutor } from "../types";
 
 export function createNetworkQueryExecutor(
   uri: string,
   fetchOptions: FetchOptions = {}
 ): IQueryExecutor {
   return async function execute(args) {
-    const { query, variables, operationName } = args
+    const { query, variables, operationName } = args;
 
     const response = await fetch(uri, {
       method: "POST",
@@ -18,24 +18,24 @@ export function createNetworkQueryExecutor(
         "Content-Type": "application/json",
         ...fetchOptions.headers,
       },
-    })
+    });
     if (!response.ok) {
       console.warn(
         `Query ${operationName} returned status ${response.status}.\n` +
           `Query variables: ${inspect(variables)}`
-      )
+      );
     }
-    const result = await response.json()
+    const result = await response.json();
 
     if (result.data && result.errors?.length) {
       console.warn(
         `Query ${operationName} returned warnings:\n` +
           `${inspect(result.errors)}\n` +
           `Query variables: ${inspect(variables)}`
-      )
+      );
     }
-    return result
-  }
+    return result;
+  };
 }
 
 /**
@@ -49,11 +49,11 @@ export function wrapQueryExecutorWithQueue(
   executor: IQueryExecutor,
   queueOptions: PQueueOptions<any, any> = { concurrency: 10 }
 ): IQueryExecutor {
-  const queryQueue = new PQueue(queueOptions)
+  const queryQueue = new PQueue(queueOptions);
 
   return async function executeQueued(args: IQueryExecutionArgs) {
-    return await queryQueue.add(() => executor(args))
-  }
+    return await queryQueue.add(() => executor(args));
+  };
 }
 
 /**
@@ -64,7 +64,7 @@ export function createDefaultQueryExecutor(
   fetchOptions: FetchOptions,
   queueOptions: PQueueOptions<any, any> = { concurrency: 10 }
 ): IQueryExecutor {
-  const executor = createNetworkQueryExecutor(uri, fetchOptions)
+  const executor = createNetworkQueryExecutor(uri, fetchOptions);
 
-  return wrapQueryExecutorWithQueue(executor, queueOptions)
+  return wrapQueryExecutorWithQueue(executor, queueOptions);
 }

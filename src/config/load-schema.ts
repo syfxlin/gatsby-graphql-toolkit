@@ -3,8 +3,8 @@ import {
   getIntrospectionQuery,
   IntrospectionQuery,
   GraphQLSchema,
-} from "graphql"
-import { IQueryExecutor } from "../types"
+} from "graphql";
+import { IQueryExecutor } from "../types";
 
 export async function introspectSchema(
   execute: IQueryExecutor
@@ -13,16 +13,16 @@ export async function introspectSchema(
     query: getIntrospectionQuery(),
     operationName: `IntrospectionQuery`,
     variables: {},
-  })
+  });
 
   if (!introspectionResult.data || introspectionResult.errors?.length) {
     const error = introspectionResult.errors?.length
       ? introspectionResult.errors[0].message
-      : ``
-    throw new Error(`Schema introspection failed. First error: ${error}`)
+      : ``;
+    throw new Error(`Schema introspection failed. First error: ${error}`);
   }
 
-  return introspectionResult.data as IntrospectionQuery
+  return introspectionResult.data as IntrospectionQuery;
 }
 
 /**
@@ -33,6 +33,6 @@ export async function introspectSchema(
 export async function loadSchema(
   execute: IQueryExecutor
 ): Promise<GraphQLSchema> {
-  const introspectionResult = await introspectSchema(execute)
-  return buildClientSchema(introspectionResult)
+  const introspectionResult = await introspectSchema(execute);
+  return buildClientSchema(introspectionResult);
 }

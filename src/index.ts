@@ -2,11 +2,11 @@ export {
   createDefaultQueryExecutor,
   createNetworkQueryExecutor,
   wrapQueryExecutorWithQueue,
-} from "./config/query-executor"
+} from "./config/query-executor";
 
-export { loadSchema, introspectSchema } from "./config/load-schema"
-export { buildNodeDefinitions } from "./config/build-node-definitions"
-export { createSourcingContext } from "./source-nodes"
+export { loadSchema, introspectSchema } from "./config/load-schema";
+export { buildNodeDefinitions } from "./config/build-node-definitions";
+export { createSourcingContext } from "./source-nodes";
 
 export {
   PaginationAdapters,
@@ -15,7 +15,7 @@ export {
   NoPagination,
   IPageInfo,
   IPaginationAdapter,
-} from "./config/pagination-adapters"
+} from "./config/pagination-adapters";
 
 export {
   compileNodeQueries,
@@ -24,7 +24,7 @@ export {
   readOrGenerateDefaultFragments,
   writeCompiledQueries,
   writeGatsbyFragments,
-} from "./compile-node-queries"
+} from "./compile-node-queries";
 
 export {
   fetchNodeList,
@@ -36,6 +36,6 @@ export {
   touchNodes,
   deleteNodes,
   createNodes,
-} from "./source-nodes"
+} from "./source-nodes";
 
-export { createSchemaCustomization } from "./create-schema-customization"
+export { createSchemaCustomization } from "./create-schema-customization";

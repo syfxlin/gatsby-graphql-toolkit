@@ -1,13 +1,13 @@
-import { IGatsbyNodeDefinition, ISourcingContext } from "../../types"
-import { Node } from "gatsby"
+import { IGatsbyNodeDefinition, ISourcingContext } from "../../types";
+import { Node } from "gatsby";
 
 export function touchNodes(
   context: ISourcingContext,
   excludeIds: Set<string> = new Set()
 ) {
-  context.gatsbyNodeDefs.forEach(def =>
+  context.gatsbyNodeDefs.forEach((def) =>
     touchNodesByType(context, def, excludeIds)
-  )
+  );
 }
 
 export function touchNodesByType(
@@ -15,15 +15,15 @@ export function touchNodesByType(
   def: IGatsbyNodeDefinition,
   excludeIds: Set<string> = new Set()
 ) {
-  const { gatsbyApi, typeNameTransform } = context
-  const { actions, getNodesByType } = gatsbyApi
+  const { gatsbyApi, typeNameTransform } = context;
+  const { actions, getNodesByType } = gatsbyApi;
 
-  const gatsbyTypeName = typeNameTransform.toGatsbyTypeName(def.remoteTypeName)
-  const nodes: Node[] = getNodesByType(gatsbyTypeName)
+  const gatsbyTypeName = typeNameTransform.toGatsbyTypeName(def.remoteTypeName);
+  const nodes: Node[] = getNodesByType(gatsbyTypeName);
 
   for (const node of nodes) {
     if (!excludeIds.has(node.id)) {
-      actions.touchNode(node)
+      actions.touchNode(node);
     }
   }
 }

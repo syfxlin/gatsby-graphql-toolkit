@@ -6,17 +6,17 @@ import {
   TypeInfo,
   visit,
   visitWithTypeInfo,
-} from "graphql"
-import { IGatsbyNodeConfig, RemoteTypeName } from "../../types"
+} from "graphql";
+import { IGatsbyNodeConfig, RemoteTypeName } from "../../types";
 
-type TypeUsagePath = string
-type TypeUsages = Map<TypeUsagePath, FieldNode[]>
-export type TypeUsagesMap = Map<RemoteTypeName, TypeUsages>
+type TypeUsagePath = string;
+type TypeUsages = Map<TypeUsagePath, FieldNode[]>;
+export type TypeUsagesMap = Map<RemoteTypeName, TypeUsages>;
 
 interface IBuildTypeUsagesMapArgs {
-  schema: GraphQLSchema
-  gatsbyNodeTypes: IGatsbyNodeConfig[]
-  fragments: FragmentDefinitionNode[] // TODO: rename to userFragments
+  schema: GraphQLSchema;
+  gatsbyNodeTypes: IGatsbyNodeConfig[];
+  fragments: FragmentDefinitionNode[]; // TODO: rename to userFragments
 }
 
 /**
@@ -59,64 +59,64 @@ export function buildTypeUsagesMap(
   const fullDocument: DocumentNode = {
     kind: "Document",
     definitions: args.fragments,
-  }
+  };
 
-  const typeInfo = new TypeInfo(args.schema)
-  const typeUsagesMap: TypeUsagesMap = new Map()
-  const typeUsagePath: string[] = []
+  const typeInfo = new TypeInfo(args.schema);
+  const typeUsagesMap: TypeUsagesMap = new Map();
+  const typeUsagePath: string[] = [];
 
   visit(
     fullDocument,
     visitWithTypeInfo(typeInfo, {
       FragmentDefinition: {
         enter(node) {
-          typeUsagePath.push(node.name.value)
+          typeUsagePath.push(node.name.value);
         },
         leave() {
-          typeUsagePath.pop()
+          typeUsagePath.pop();
         },
       },
       InlineFragment: {
         enter(_, key) {
-          typeUsagePath.push(String(key))
+          typeUsagePath.push(String(key));
         },
         leave() {
-          typeUsagePath.pop()
+          typeUsagePath.pop();
         },
       },
       Field: {
-        enter: node => {
-          const parentType = typeInfo.getParentType()
+        enter: (node) => {
+          const parentType = typeInfo.getParentType();
           if (!parentType) {
-            const fragmentName = typeUsagePath[0]
-            const pathStr = typeUsagePath.join(`,`)
+            const fragmentName = typeUsagePath[0];
+            const pathStr = typeUsagePath.join(`,`);
             throw new Error(
               `Field "${node.name.value}" at path "${pathStr}" has no parent type. ` +
                 `This may indicate that your remote schema had changed ` +
                 `and your fragment "${fragmentName}" must be updated.`
-            )
+            );
           }
-          const typeUsageKey = typeUsagePath.join(`__`)
+          const typeUsageKey = typeUsagePath.join(`__`);
 
           if (!typeUsagesMap.has(parentType.name)) {
-            typeUsagesMap.set(parentType.name, new Map() as TypeUsages)
+            typeUsagesMap.set(parentType.name, new Map() as TypeUsages);
           }
-          const typeFragments = typeUsagesMap.get(parentType.name)!
+          const typeFragments = typeUsagesMap.get(parentType.name)!;
           if (!typeFragments.has(typeUsageKey)) {
-            typeFragments.set(typeUsageKey, [] as FieldNode[])
+            typeFragments.set(typeUsageKey, [] as FieldNode[]);
           }
-          const fragmentFields = typeFragments.get(typeUsageKey)!
-          fragmentFields.push(node)
+          const fragmentFields = typeFragments.get(typeUsageKey)!;
+          fragmentFields.push(node);
 
-          const alias = node.alias ? node.alias.value : node.name.value
-          typeUsagePath.push(alias)
+          const alias = node.alias ? node.alias.value : node.name.value;
+          typeUsagePath.push(alias);
         },
         leave: () => {
-          typeUsagePath.pop()
+          typeUsagePath.pop();
         },
       },
     })
-  )
+  );
 
-  return typeUsagesMap
+  return typeUsagesMap;
 }

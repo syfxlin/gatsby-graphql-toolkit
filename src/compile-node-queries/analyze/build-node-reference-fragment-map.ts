@@ -6,15 +6,15 @@ import {
   GraphQLSchema,
   isObjectType,
   parse,
-} from "graphql"
-import { flatMap } from "lodash"
-import { FragmentMap, IGatsbyNodeConfig, RemoteTypeName } from "../../types"
-import * as GraphQLAST from "../../utils/ast-nodes"
+} from "graphql";
+import { flatMap } from "lodash";
+import { FragmentMap, IGatsbyNodeConfig, RemoteTypeName } from "../../types";
+import * as GraphQLAST from "../../utils/ast-nodes";
 import {
   isField,
   isFragment,
   isTypeNameField,
-} from "../../utils/ast-predicates"
+} from "../../utils/ast-predicates";
 
 /**
  * Create reference fragment for every node type
@@ -40,12 +40,12 @@ export function buildNodeReferenceFragmentMap({
   schema,
   gatsbyNodeTypes: nodes,
 }: {
-  schema: GraphQLSchema
-  gatsbyNodeTypes: IGatsbyNodeConfig[]
+  schema: GraphQLSchema;
+  gatsbyNodeTypes: IGatsbyNodeConfig[];
 }): FragmentMap {
-  const nodeReferenceFragmentMap: FragmentMap = new Map()
-  const possibleNodeInterfaces: GraphQLInterfaceType[] = []
-  const nodesMap = new Map<RemoteTypeName, FragmentDefinitionNode>()
+  const nodeReferenceFragmentMap: FragmentMap = new Map();
+  const possibleNodeInterfaces: GraphQLInterfaceType[] = [];
+  const nodesMap = new Map<RemoteTypeName, FragmentDefinitionNode>();
 
   // Add reference fragments for simple node object types
   // TODO: move config validation to a separate step
@@ -54,79 +54,76 @@ export function buildNodeReferenceFragmentMap({
       throw new Error(
         `Every node type definition is expected to have key "remoteTypeName". ` +
           `But definition at index ${index} has none.`
-      )
+      );
     }
     if (!config.queries) {
       throw new Error(
         `Every node type definition is expected to have key "queries". ` +
           `But definition for ${config.remoteTypeName} has none.`
-      )
+      );
     }
-    const remoteTypeName = config.remoteTypeName
-    const nodeType = schema.getType(remoteTypeName)
+    const remoteTypeName = config.remoteTypeName;
+    const nodeType = schema.getType(remoteTypeName);
     if (!isObjectType(nodeType)) {
       throw new Error(
         `Only object types can be defined as gatsby nodes. Got ${remoteTypeName} ` +
           `(for definition at index ${index})`
-      )
+      );
     }
-    const document = parse(config.queries)
-    const fragments = document.definitions.filter(isFragment)
+    const document = parse(config.queries);
+    const fragments = document.definitions.filter(isFragment);
     if (fragments.length !== 1) {
       throw new Error(
         `Every node type query is expected to contain a single fragment ` +
           `with ID fields for this node type. Definition for ${remoteTypeName} has none.`
-      )
+      );
     }
-    const idFragment = fragments[0]
+    const idFragment = fragments[0];
     if (idFragment.typeCondition.name.value !== remoteTypeName) {
       throw new Error(
         `Fragment ${idFragment.name.value} for node type ${remoteTypeName} ` +
           `is incorrectly defined on type ${idFragment.typeCondition.name.value}`
-      )
+      );
     }
-    const referenceFragment: FragmentDefinitionNode = GraphQLAST.fragmentDefinition(
-      remoteTypeName,
-      remoteTypeName,
-      [
+    const referenceFragment: FragmentDefinitionNode =
+      GraphQLAST.fragmentDefinition(remoteTypeName, remoteTypeName, [
         GraphQLAST.field(`__typename`),
         ...idFragment.selectionSet.selections.filter(
-          selection => !isTypeNameField(selection)
+          (selection) => !isTypeNameField(selection)
         ),
-      ]
-    )
-    nodeReferenceFragmentMap.set(remoteTypeName, referenceFragment)
-    possibleNodeInterfaces.push(...nodeType.getInterfaces())
-    nodesMap.set(remoteTypeName, referenceFragment)
-  })
+      ]);
+    nodeReferenceFragmentMap.set(remoteTypeName, referenceFragment);
+    possibleNodeInterfaces.push(...nodeType.getInterfaces());
+    nodesMap.set(remoteTypeName, referenceFragment);
+  });
 
   // Detect node interfaces and add reference fragments for those
   // Node interface is any interface that has all of it's implementors configured
   //   as Gatsby node types and also having all ID fields of all implementors
-  new Set<GraphQLInterfaceType>(possibleNodeInterfaces).forEach(iface => {
-    const possibleTypes = schema.getPossibleTypes(iface)
+  new Set<GraphQLInterfaceType>(possibleNodeInterfaces).forEach((iface) => {
+    const possibleTypes = schema.getPossibleTypes(iface);
     if (!allPossibleTypesAreNodeTypes(possibleTypes, nodesMap)) {
-      return
+      return;
     }
     const referenceFragment = combineReferenceFragments(
       iface.name,
       possibleTypes,
       nodesMap
-    )
+    );
     if (!hasAllIdFields(iface, referenceFragment)) {
-      return
+      return;
     }
-    nodeReferenceFragmentMap.set(iface.name, referenceFragment)
-  })
+    nodeReferenceFragmentMap.set(iface.name, referenceFragment);
+  });
 
-  return nodeReferenceFragmentMap
+  return nodeReferenceFragmentMap;
 }
 
 function allPossibleTypesAreNodeTypes(
   possibleTypes: readonly GraphQLObjectType[],
   nodesMap: Map<RemoteTypeName, FragmentDefinitionNode>
 ): boolean {
-  return possibleTypes.every(type => nodesMap.has(type.name))
+  return possibleTypes.every((type) => nodesMap.has(type.name));
 }
 
 function combineReferenceFragments(
@@ -136,43 +133,43 @@ function combineReferenceFragments(
 ): FragmentDefinitionNode {
   const allIdFields = flatMap(
     possibleTypes,
-    type => nodesMap.get(type.name)?.selectionSet.selections ?? []
-  ).filter(isField)
+    (type) => nodesMap.get(type.name)?.selectionSet.selections ?? []
+  ).filter(isField);
 
   const allReferenceFieldsWithoutTypename = dedupeFieldsRecursively(
-    allIdFields.filter(f => isField(f) && !isTypeNameField(f))
-  )
+    allIdFields.filter((f) => isField(f) && !isTypeNameField(f))
+  );
 
   return GraphQLAST.fragmentDefinition(interfaceName, interfaceName, [
     GraphQLAST.field(`__typename`),
     ...allReferenceFieldsWithoutTypename,
-  ])
+  ]);
 }
 
 function dedupeFieldsRecursively(fields: FieldNode[]): FieldNode[] {
-  const uniqueFields = new Map<string, FieldNode[]>()
+  const uniqueFields = new Map<string, FieldNode[]>();
 
-  fields.forEach(field => {
-    const fieldName = field.name.value
-    const subFields = field.selectionSet?.selections.filter(isField) ?? []
+  fields.forEach((field) => {
+    const fieldName = field.name.value;
+    const subFields = field.selectionSet?.selections.filter(isField) ?? [];
 
     uniqueFields.set(fieldName, [
       ...(uniqueFields.get(fieldName) ?? []),
       ...subFields,
-    ])
-  })
+    ]);
+  });
 
-  const result: FieldNode[] = []
+  const result: FieldNode[] = [];
   for (const [fieldName, subFields] of uniqueFields) {
     const field = GraphQLAST.field(
       fieldName,
       undefined,
       undefined,
       dedupeFieldsRecursively(subFields)
-    )
-    result.push(field)
+    );
+    result.push(field);
   }
-  return result
+  return result;
 }
 
 function hasAllIdFields(
@@ -180,15 +177,15 @@ function hasAllIdFields(
   idFragment: FragmentDefinitionNode
 ): boolean {
   // TODO: also check nested fields?
-  const fields = iface.getFields()
+  const fields = iface.getFields();
   for (const field of idFragment.selectionSet.selections) {
     if (!isField(field)) {
-      return false
+      return false;
     }
-    const fieldName = field.name.value
+    const fieldName = field.name.value;
     if (!fields[fieldName] && fieldName !== `__typename`) {
-      return false
+      return false;
     }
   }
-  return true
+  return true;
 }

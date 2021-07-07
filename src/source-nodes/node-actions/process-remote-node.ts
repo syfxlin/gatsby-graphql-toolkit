@@ -2,7 +2,7 @@ import {
   IGatsbyNodeDefinition,
   IRemoteNode,
   ISourcingContext,
-} from "../../types"
+} from "../../types";
 
 export async function processRemoteNode(
   // @ts-ignore
@@ -12,5 +12,5 @@ export async function processRemoteNode(
   remoteNode: IRemoteNode
 ) {
   // TODO: handle https://github.com/graphql/graphql-js/issues/522
-  return remoteNode
+  return remoteNode;
 }

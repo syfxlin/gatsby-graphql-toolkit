@@ -5,12 +5,12 @@ import {
   SelectionSetNode,
   isCompositeType,
   getNamedType,
-} from "graphql"
-import * as GraphQLAST from "../../utils/ast-nodes"
-import { isField, isNode, isTypeNameField } from "../../utils/ast-predicates"
+} from "graphql";
+import * as GraphQLAST from "../../utils/ast-nodes";
+import { isField, isNode, isTypeNameField } from "../../utils/ast-predicates";
 
 interface IAddTypeNameArgs {
-  typeInfo: TypeInfo
+  typeInfo: TypeInfo;
 }
 
 /**
@@ -33,7 +33,7 @@ export function addRemoteTypeNameField({
 }: IAddTypeNameArgs): Visitor<ASTKindToNode> {
   return {
     SelectionSet: (node, _, parent) => {
-      const type = typeInfo.getType()
+      const type = typeInfo.getType();
       if (
         type &&
         isNode(parent) &&
@@ -44,13 +44,13 @@ export function addRemoteTypeNameField({
         return {
           ...node,
           selections: [GraphQLAST.field(`__typename`), ...node.selections],
-        }
+        };
       }
-      return
+      return;
     },
-  }
+  };
 }
 
 function hasTypenameField(node: SelectionSetNode) {
-  return node.selections.some(isTypeNameField)
+  return node.selections.some(isTypeNameField);
 }

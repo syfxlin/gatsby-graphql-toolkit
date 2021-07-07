@@ -1,1 +1,1 @@
-export { createSchemaCustomization } from "./create-schema-customization"
+export { createSchemaCustomization } from "./create-schema-customization";

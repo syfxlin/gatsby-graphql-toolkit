@@ -1,12 +1,12 @@
 function formatLogMessage(input): string {
-  let message
+  let message;
   if (typeof input === `string`) {
-    message = input
+    message = input;
   } else {
-    message = input[0]
+    message = input[0];
   }
 
-  return message
+  return message;
 }
 
-export { formatLogMessage }
+export { formatLogMessage };

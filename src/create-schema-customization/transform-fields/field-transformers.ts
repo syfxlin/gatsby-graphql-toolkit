@@ -9,19 +9,19 @@ import {
   GraphQLType,
   getNamedType,
   isEnumType,
-} from "graphql"
-import { resolveRemoteType } from "../utils/resolve-remote-type"
+} from "graphql";
+import { resolveRemoteType } from "../utils/resolve-remote-type";
 import {
   IGatsbyFieldTransform,
   IRemoteNode,
   ISchemaCustomizationContext,
-} from "../../types"
+} from "../../types";
 
 // TODO: map args
 // TODO: support pagination
 
 function isListOrNonNullListType(type: any) {
-  return isListType(type) || (isNonNullType(type) && isListType(type.ofType))
+  return isListType(type) || (isNonNullType(type) && isListType(type.ofType));
 }
 
 export const fieldTransformers: IGatsbyFieldTransform[] = [
@@ -30,14 +30,14 @@ export const fieldTransformers: IGatsbyFieldTransform[] = [
     test: ({ remoteField }) => isScalarType(getNamedType(remoteField.type)),
 
     transform: ({ remoteField }) => {
-      const namedType = getNamedType(remoteField.type)
+      const namedType = getNamedType(remoteField.type);
       const typeName = isSpecifiedScalarType(namedType)
         ? String(namedType)
-        : `JSON`
+        : `JSON`;
 
       return {
         type: wrap(typeName, remoteField.type),
-      }
+      };
     },
   },
   {
@@ -51,10 +51,10 @@ export const fieldTransformers: IGatsbyFieldTransform[] = [
   {
     // Non-gatsby-node objects (with any wrappers, i.e. lists, non-null)
     test: ({ remoteField, context }) => {
-      const namedType = getNamedType(remoteField.type)
+      const namedType = getNamedType(remoteField.type);
       return (
         isObjectType(namedType) && !context.gatsbyNodeDefs.has(namedType.name)
-      )
+      );
     },
     transform: ({ remoteField, context }) => ({
       type: toGatsbyType(context, remoteField.type),
@@ -73,10 +73,10 @@ export const fieldTransformers: IGatsbyFieldTransform[] = [
       return {
         type: toGatsbyType(context, remoteField.type),
         resolve: (source, _, resolverContext) => {
-          const value = source[fieldInfo.gatsbyFieldName]
-          return resolveNode(context, value, resolverContext) ?? value
+          const value = source[fieldInfo.gatsbyFieldName];
+          return resolveNode(context, value, resolverContext) ?? value;
         },
-      }
+      };
     },
   },
 
@@ -95,19 +95,19 @@ export const fieldTransformers: IGatsbyFieldTransform[] = [
             source[fieldInfo.gatsbyFieldName] ?? [],
             resolverContext
           ),
-      }
+      };
     },
   },
 
   {
     // Singular gatsby node objects (with any wrappers, i.e. list, non-null)
     test: ({ remoteField, context }) => {
-      const namedType = getNamedType(remoteField.type)
+      const namedType = getNamedType(remoteField.type);
       return (
         !isListOrNonNullListType(remoteField.type) &&
         isObjectType(namedType) &&
         context.gatsbyNodeDefs.has(namedType.name)
-      )
+      );
     },
 
     transform: ({ remoteField, fieldInfo, context }) => {
@@ -119,19 +119,19 @@ export const fieldTransformers: IGatsbyFieldTransform[] = [
             source[fieldInfo.gatsbyFieldName],
             resolverContext
           ),
-      }
+      };
     },
   },
 
   {
     // List of gatsby nodes
     test: ({ remoteField, context }) => {
-      const namedType = getNamedType(remoteField.type)
+      const namedType = getNamedType(remoteField.type);
       return (
         isListOrNonNullListType(remoteField.type) &&
         isObjectType(namedType) &&
         context.gatsbyNodeDefs.has(namedType.name)
-      )
+      );
     },
     transform: ({ remoteField, fieldInfo, context }) => {
       return {
@@ -142,7 +142,7 @@ export const fieldTransformers: IGatsbyFieldTransform[] = [
             source[fieldInfo.gatsbyFieldName] ?? [],
             resolverContext
           ),
-      }
+      };
     },
   },
 
@@ -151,17 +151,17 @@ export const fieldTransformers: IGatsbyFieldTransform[] = [
   //  test: () => true,
   //  transform: ({ remoteField, fieldInfo }) => console.log(fieldInfo),
   // },
-]
+];
 
 function toGatsbyType(
   context: ISchemaCustomizationContext,
   remoteType: GraphQLType
 ) {
-  const namedType = getNamedType(remoteType)
+  const namedType = getNamedType(remoteType);
   const gatsbyTypeName = context.typeNameTransform.toGatsbyTypeName(
     namedType.name
-  )
-  return wrap(gatsbyTypeName, remoteType)
+  );
+  return wrap(gatsbyTypeName, remoteType);
 }
 
 /**
@@ -169,18 +169,18 @@ function toGatsbyType(
  * i.e. wrapType(`JSON`, myRemoteListOfJSONType) => `[JSON]`
  */
 function wrap(typeName: string, remoteType: GraphQLType): string {
-  let wrappedType = typeName
-  let currentRemoteType = remoteType
+  let wrappedType = typeName;
+  let currentRemoteType = remoteType;
   while (isWrappingType(currentRemoteType)) {
     if (isListType(currentRemoteType)) {
-      wrappedType = `[${wrappedType}]`
+      wrappedType = `[${wrappedType}]`;
     }
     if (isNonNullType(currentRemoteType)) {
-      wrappedType = `${wrappedType}!`
+      wrappedType = `${wrappedType}!`;
     }
-    currentRemoteType = currentRemoteType.ofType
+    currentRemoteType = currentRemoteType.ofType;
   }
-  return wrappedType
+  return wrappedType;
 }
 
 function mapListOfNodes(
@@ -188,11 +188,11 @@ function mapListOfNodes(
   list: unknown[],
   resolverContext: any
 ): any {
-  return list.map(value =>
+  return list.map((value) =>
     Array.isArray(value)
       ? mapListOfNodes(context, value, resolverContext)
       : resolveNode(context, value as IRemoteNode, resolverContext) ?? value
-  )
+  );
 }
 
 function resolveNode(
@@ -200,16 +200,16 @@ function resolveNode(
   source: IRemoteNode | void | null,
   resolverContext: any
 ): any {
-  const remoteTypeName = resolveRemoteType(context, source)
+  const remoteTypeName = resolveRemoteType(context, source);
   if (!source || !remoteTypeName) {
-    return
+    return;
   }
-  const def = context.gatsbyNodeDefs.get(remoteTypeName)
+  const def = context.gatsbyNodeDefs.get(remoteTypeName);
   if (!def) {
-    return
+    return;
   }
-  const id = context.idTransform.remoteNodeToGatsbyId(source, def)
-  const type = context.typeNameTransform.toGatsbyTypeName(remoteTypeName)
+  const id = context.idTransform.remoteNodeToGatsbyId(source, def);
+  const type = context.typeNameTransform.toGatsbyTypeName(remoteTypeName);
 
-  return resolverContext.nodeModel.getNodeById({ id, type })
+  return resolverContext.nodeModel.getNodeById({ id, type });
 }

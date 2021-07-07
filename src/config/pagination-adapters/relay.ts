@@ -1,9 +1,9 @@
-import { DEFAULT_PAGE_SIZE } from "../../constants"
-import { IPaginationAdapter } from "./types"
+import { DEFAULT_PAGE_SIZE } from "../../constants";
+import { IPaginationAdapter } from "./types";
 
 export interface IRelayPage {
-  edges: { cursor: string; node: object | null }[]
-  pageInfo: { hasNextPage: boolean }
+  edges: { cursor: string; node: object | null }[];
+  pageInfo: { hasNextPage: boolean };
 }
 
 export const RelayForward: IPaginationAdapter<IRelayPage, object> = {
@@ -13,16 +13,16 @@ export const RelayForward: IPaginationAdapter<IRelayPage, object> = {
     return {
       variables: { first: DEFAULT_PAGE_SIZE, after: undefined },
       hasNextPage: true,
-    }
+    };
   },
   next(state, page) {
-    const tail = page.edges[page.edges.length - 1]
-    const first = Number(state.variables.first) ?? DEFAULT_PAGE_SIZE
-    const after = tail?.cursor
+    const tail = page.edges[page.edges.length - 1];
+    const first = Number(state.variables.first) ?? DEFAULT_PAGE_SIZE;
+    const after = tail?.cursor;
     return {
       variables: { first, after },
       hasNextPage: Boolean(page?.pageInfo?.hasNextPage && tail),
-    }
+    };
   },
   concat(acc, page) {
     return {
@@ -32,9 +32,9 @@ export const RelayForward: IPaginationAdapter<IRelayPage, object> = {
         ...page.edges,
       },
       pageInfo: page.pageInfo,
-    }
+    };
   },
   getItems(pageOrResult) {
-    return pageOrResult.edges.map(edge => (edge ? edge.node : null))
+    return pageOrResult.edges.map((edge) => (edge ? edge.node : null));
   },
-}
+};

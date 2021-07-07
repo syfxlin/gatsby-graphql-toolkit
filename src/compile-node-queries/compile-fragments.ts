@@ -5,15 +5,15 @@ import {
   TypeInfo,
   visit,
   visitWithTypeInfo,
-} from "graphql"
+} from "graphql";
 import {
   ICompileQueriesContext,
   IGatsbyNodeConfig,
   RemoteTypeName,
-} from "../types"
-import * as GraphQLAST from "../utils/ast-nodes"
-import { replaceNodeSelectionWithReference } from "./ast-transformers/replace-node-selection-with-reference"
-import { isFragment } from "../utils/ast-predicates"
+} from "../types";
+import * as GraphQLAST from "../utils/ast-nodes";
+import { replaceNodeSelectionWithReference } from "./ast-transformers/replace-node-selection-with-reference";
+import { isFragment } from "../utils/ast-predicates";
 
 /**
  * Compiles all user-defined custom fragments into "node fragments".
@@ -69,82 +69,82 @@ import { isFragment } from "../utils/ast-predicates"
 export function compileNodeFragments(
   context: ICompileQueriesContext
 ): Map<RemoteTypeName, FragmentDefinitionNode[]> {
-  const nodeFragments = new Map<RemoteTypeName, FragmentDefinitionNode[]>()
+  const nodeFragments = new Map<RemoteTypeName, FragmentDefinitionNode[]>();
   for (const nodeConfig of context.gatsbyNodeTypes.values()) {
     nodeFragments.set(
       nodeConfig.remoteTypeName,
       compileNormalizedNodeFragments(context, nodeConfig)
-    )
+    );
   }
-  return nodeFragments
+  return nodeFragments;
 }
 
 function compileNormalizedNodeFragments(
   context: ICompileQueriesContext,
   gatsbyNodeConfig: IGatsbyNodeConfig
 ): FragmentDefinitionNode[] {
-  const { schema, typeUsagesMap } = context
-  const type = schema.getType(gatsbyNodeConfig.remoteTypeName)
+  const { schema, typeUsagesMap } = context;
+  const type = schema.getType(gatsbyNodeConfig.remoteTypeName);
   if (!isObjectType(type)) {
-    return []
+    return [];
   }
   const allTypes: string[] = [
     gatsbyNodeConfig.remoteTypeName,
-    ...type.getInterfaces().map(iface => iface.name),
-  ]
-  const result: FragmentDefinitionNode[] = []
+    ...type.getInterfaces().map((iface) => iface.name),
+  ];
+  const result: FragmentDefinitionNode[] = [];
   for (const typeName of allTypes) {
-    const typeUsages = typeUsagesMap.get(typeName) ?? []
+    const typeUsages = typeUsagesMap.get(typeName) ?? [];
     for (const [typeUsagePath, fields] of typeUsages) {
       result.push(
         GraphQLAST.fragmentDefinition(typeUsagePath, typeName, fields)
-      )
+      );
     }
   }
-  return addNodeReferences(context, result)
+  return addNodeReferences(context, result);
 }
 
 export function compileNonNodeFragments(context: ICompileQueriesContext) {
-  const nonNodeFragments = findAllNonNodeFragments(context)
-  return addNodeReferences(context, nonNodeFragments)
+  const nonNodeFragments = findAllNonNodeFragments(context);
+  return addNodeReferences(context, nonNodeFragments);
 }
 
 function addNodeReferences(
   context: ICompileQueriesContext,
   fragments: FragmentDefinitionNode[]
 ): FragmentDefinitionNode[] {
-  const { schema, originalCustomFragments, nodeReferenceFragmentMap } = context
-  const typeInfo = new TypeInfo(schema)
+  const { schema, originalCustomFragments, nodeReferenceFragmentMap } = context;
+  const typeInfo = new TypeInfo(schema);
 
   const visitContext = {
     schema,
     nodeReferenceFragmentMap,
     originalCustomFragments,
     typeInfo,
-  }
+  };
   let doc: DocumentNode = visit(
     GraphQLAST.document(fragments),
     visitWithTypeInfo(typeInfo, replaceNodeSelectionWithReference(visitContext))
-  )
-  return doc.definitions.filter(isFragment)
+  );
+  return doc.definitions.filter(isFragment);
 }
 
 function findAllNonNodeFragments(
   args: ICompileQueriesContext
 ): FragmentDefinitionNode[] {
-  const nodeTypes = new Set()
-  args.gatsbyNodeTypes.forEach(def => {
-    const type = args.schema.getType(def.remoteTypeName)
+  const nodeTypes = new Set();
+  args.gatsbyNodeTypes.forEach((def) => {
+    const type = args.schema.getType(def.remoteTypeName);
     if (!isObjectType(type)) {
-      return
+      return;
     }
-    nodeTypes.add(type.name)
-    type.getInterfaces().forEach(iface => {
-      nodeTypes.add(iface.name)
-    })
-  })
+    nodeTypes.add(type.name);
+    type.getInterfaces().forEach((iface) => {
+      nodeTypes.add(iface.name);
+    });
+  });
 
   return args.originalCustomFragments.filter(
-    fragment => !nodeTypes.has(fragment.typeCondition.name.value)
-  )
+    (fragment) => !nodeTypes.has(fragment.typeCondition.name.value)
+  );
 }

@@ -1,6 +1,6 @@
-import { buildSchema } from "graphql"
-import { dedent, printQuery } from "../test-utils"
-import { compileNodeQueries } from "../../compile-node-queries"
+import { buildSchema } from "graphql";
+import { dedent, printQuery } from "../test-utils";
+import { compileNodeQueries } from "../../compile-node-queries";
 
 // See https://github.com/vladar/gatsby-graphql-toolkit/issues/5
 
@@ -12,7 +12,7 @@ const schema = buildSchema(`
   type Query {
     nodes: Foo
   }
-`)
+`);
 
 const gatsbyNodeTypes = [
   {
@@ -24,14 +24,14 @@ const gatsbyNodeTypes = [
       }
     `,
   },
-]
+];
 
 it(`should spread fragments correctly when ID fragment is defined before the query`, async () => {
   const documents = await compileNodeQueries({
     schema,
     gatsbyNodeTypes,
     customFragments: [`fragment Foo on Foo { foo }`],
-  })
+  });
 
   expect(printQuery(documents, `Foo`)).toEqual(dedent`
     query LIST_Foo {
@@ -48,5 +48,5 @@ it(`should spread fragments correctly when ID fragment is defined before the que
     fragment Foo on Foo {
       foo
     }
-  `)
-})
+  `);
+});

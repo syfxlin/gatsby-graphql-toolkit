@@ -1,10 +1,10 @@
-import { ISourcingContext, IRemoteNode } from "../../types"
+import { IRemoteNode, ISourcingContext } from "../../types";
 import {
   collectListOperationNames,
   getGatsbyNodeDefinition,
-} from "../utils/node-definition-helpers"
-import { paginate, planPagination } from "./paginate"
-import { addPaginatedFields } from "./fetch-node-fields"
+} from "../utils/node-definition-helpers";
+import { paginate, planPagination } from "./paginate";
+import { addPaginatedFields } from "./fetch-node-fields";
 
 /**
  * Fetches and paginates remote nodes by type while reporting progress
@@ -14,17 +14,17 @@ export async function* fetchAllNodes(
   remoteTypeName: string,
   variables?: object
 ): AsyncIterable<IRemoteNode> {
-  const { gatsbyApi, formatLogMessage } = context
-  const { reporter } = gatsbyApi
-  const nodeDefinition = getGatsbyNodeDefinition(context, remoteTypeName)
+  const { gatsbyApi, formatLogMessage } = context;
+  const { reporter } = gatsbyApi;
+  const nodeDefinition = getGatsbyNodeDefinition(context, remoteTypeName);
 
   const activity = reporter.activityTimer(
     formatLogMessage(`fetching ${nodeDefinition.remoteTypeName}`)
-  )
-  activity.start()
+  );
+  activity.start();
 
   try {
-    const listOperations = collectListOperationNames(nodeDefinition.document)
+    const listOperations = collectListOperationNames(nodeDefinition.document);
 
     for (const nodeListQuery of listOperations) {
       const nodes = fetchNodeList(
@@ -32,13 +32,13 @@ export async function* fetchAllNodes(
         remoteTypeName,
         nodeListQuery,
         variables
-      )
+      );
       for await (const node of nodes) {
-        yield node
+        yield node;
       }
     }
   } finally {
-    activity.end()
+    activity.end();
   }
 }
 
@@ -48,27 +48,31 @@ export async function* fetchNodeList(
   listOperationName: string,
   variables?: object
 ): AsyncIterable<IRemoteNode> {
-  const typeNameField = context.gatsbyFieldAliases["__typename"]
-  const nodeDefinition = getGatsbyNodeDefinition(context, remoteTypeName)
+  const typeNameField = context.gatsbyFieldAliases["__typename"];
+  const nodeDefinition = getGatsbyNodeDefinition(context, remoteTypeName);
 
   const plan = planPagination(
     context,
     nodeDefinition.document,
     listOperationName,
     variables
-  )
+  );
 
   for await (const page of paginate(context, plan)) {
-    const partialNodes = plan.adapter.getItems(page.fieldValue)
+    let partialNodes = plan.adapter.getItems(page.fieldValue);
+
+    if (!(partialNodes instanceof Array)) {
+      partialNodes = [partialNodes];
+    }
 
     for (const node of partialNodes) {
       if (!node || node[typeNameField] !== remoteTypeName) {
         // Possible when fetching complex interface or union type fields
         // or when some node is `null`
-        continue
+        continue;
       }
       // TODO: run in parallel?
-      yield addPaginatedFields(context, nodeDefinition, node)
+      yield addPaginatedFields(context, nodeDefinition, node);
     }
   }
 }

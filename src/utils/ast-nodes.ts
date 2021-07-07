@@ -14,13 +14,13 @@ import {
   SelectionSetNode,
   StringValueNode,
   ValueNode,
-} from "graphql"
+} from "graphql";
 
 export function document(definitions: DefinitionNode[]): DocumentNode {
   return {
     kind: "Document",
     definitions,
-  }
+  };
 }
 
 export function fragmentDefinition(
@@ -33,7 +33,7 @@ export function fragmentDefinition(
     name: name(fragmentName ?? typeName),
     typeCondition: namedType(typeName),
     selectionSet: selectionSet(selections),
-  }
+  };
 }
 
 export function inlineFragment(
@@ -44,7 +44,7 @@ export function inlineFragment(
     kind: "InlineFragment",
     typeCondition: namedType(typeCondition),
     selectionSet: selectionSet(selections),
-  }
+  };
 }
 
 export function selectionSet(
@@ -53,7 +53,7 @@ export function selectionSet(
   return {
     kind: "SelectionSet",
     selections: selections,
-  }
+  };
 }
 
 export function field(
@@ -70,7 +70,7 @@ export function field(
     arguments: args,
     selectionSet: selectionSet(selections),
     directives,
-  }
+  };
 }
 
 export function arg(argName: string, value: ValueNode): ArgumentNode {
@@ -78,28 +78,28 @@ export function arg(argName: string, value: ValueNode): ArgumentNode {
     kind: "Argument",
     name: name(argName),
     value,
-  }
+  };
 }
 
 export function name(value: string): NameNode {
   return {
     kind: "Name",
     value: value,
-  }
+  };
 }
 
 export function namedType(typeName: string): NamedTypeNode {
   return {
     kind: "NamedType",
     name: name(typeName),
-  }
+  };
 }
 
 export function fragmentSpread(fragmentName: string): FragmentSpreadNode {
   return {
     kind: "FragmentSpread",
     name: name(fragmentName),
-  }
+  };
 }
 
 export function directive(
@@ -110,23 +110,23 @@ export function directive(
     kind: "Directive",
     name: name(directiveName),
     arguments: args,
-  }
+  };
 }
 
 export function skipDirective(condition: boolean = true) {
-  return directive(`skip`, [arg(`if`, boolValue(condition))])
+  return directive(`skip`, [arg(`if`, boolValue(condition))]);
 }
 
 export function boolValue(value: boolean): BooleanValueNode {
   return {
     kind: "BooleanValue",
     value,
-  }
+  };
 }
 
 export function stringValue(value: string): StringValueNode {
   return {
     kind: "StringValue",
     value,
-  }
+  };
 }

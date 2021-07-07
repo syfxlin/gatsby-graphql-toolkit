@@ -1,4 +1,4 @@
-import { NamedTypeNode } from "graphql"
+import { NamedTypeNode } from "graphql";
 
 export function renameNode<T extends NamedTypeNode>(
   node: T,
@@ -10,5 +10,5 @@ export function renameNode<T extends NamedTypeNode>(
       ...node.name,
       value: convertName(node.name.value),
     },
-  }
+  };
 }

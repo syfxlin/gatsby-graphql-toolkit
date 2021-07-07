@@ -1,12 +1,12 @@
 import {
-  buildObjectType,
-  buildUnionType,
-  buildInterfaceType,
-  buildInputObjectType,
   buildEnumType,
+  buildInputObjectType,
+  buildInterfaceType,
+  buildObjectType,
   buildScalarType,
-} from "gatsby/dist/schema/types/type-builders"
-import { NodePluginArgs } from "gatsby"
+  buildUnionType,
+} from "gatsby/dist/schema/types/type-builders";
+import { NodePluginArgs } from "gatsby";
 
 export const gatsbyApiFake: any = {
   schema: {
@@ -17,6 +17,6 @@ export const gatsbyApiFake: any = {
     buildEnumType,
     buildScalarType,
   },
-}
+};
 
-export const gatsbyApi: NodePluginArgs = gatsbyApiFake
+export const gatsbyApi: NodePluginArgs = gatsbyApiFake;

@@ -1,7 +1,7 @@
-import { buildSchema } from "graphql"
-import { compileNodeQueries } from "../compile-node-queries"
-import { dedent, printQuery } from "../../__tests__/test-utils"
-import { IGatsbyNodeConfig } from "../../types"
+import { buildSchema } from "graphql";
+import { compileNodeQueries } from "../compile-node-queries";
+import { dedent, printQuery } from "../../__tests__/test-utils";
+import { IGatsbyNodeConfig } from "../../types";
 
 describe(`Happy path`, () => {
   const schema = buildSchema(`
@@ -93,16 +93,16 @@ describe(`Happy path`, () => {
       allWithComplexId2: [WithComplexId2]
       allBaz(first: Int, after: String): BazConnection
     }
-  `)
+  `);
 
   const nodeTypes: {
-    Foo: IGatsbyNodeConfig
-    Bar: IGatsbyNodeConfig
-    Baz: IGatsbyNodeConfig
-    WithGatsbyFields: IGatsbyNodeConfig
-    GatsbyFields: IGatsbyNodeConfig
-    WithComplexId1: IGatsbyNodeConfig
-    WithComplexId2: IGatsbyNodeConfig
+    Foo: IGatsbyNodeConfig;
+    Bar: IGatsbyNodeConfig;
+    Baz: IGatsbyNodeConfig;
+    WithGatsbyFields: IGatsbyNodeConfig;
+    GatsbyFields: IGatsbyNodeConfig;
+    WithComplexId1: IGatsbyNodeConfig;
+    WithComplexId2: IGatsbyNodeConfig;
   } = {
     Foo: {
       remoteTypeName: `Foo`,
@@ -161,16 +161,16 @@ describe(`Happy path`, () => {
         fragment WithComplexId2_Id on WithComplexId2 { testId id { uid } }
       `,
     },
-  }
+  };
 
   it(`adds __typename in the top-level node field`, () => {
     const queries = compileNodeQueries({
       schema,
       gatsbyNodeTypes: [nodeTypes.Foo],
       customFragments: [],
-    })
+    });
 
-    expect(queries.size).toEqual(1)
+    expect(queries.size).toEqual(1);
     expect(printQuery(queries, `Foo`)).toEqual(dedent`
       query LIST_Foo {
         allFoo {
@@ -179,17 +179,17 @@ describe(`Happy path`, () => {
         }
       }
       fragment FooId on Foo { testId }
-    `)
-  })
+    `);
+  });
 
   it(`adds __typename in the top-level node field within connection`, () => {
     const queries = compileNodeQueries({
       schema,
       gatsbyNodeTypes: [nodeTypes.Baz],
       customFragments: [],
-    })
+    });
 
-    expect(queries.size).toEqual(1)
+    expect(queries.size).toEqual(1);
     expect(printQuery(queries, `Baz`)).toEqual(dedent`
       query LIST_Baz {
         allBaz {
@@ -202,17 +202,17 @@ describe(`Happy path`, () => {
         }
       }
       fragment BazId on Baz { testId }
-    `)
-  })
+    `);
+  });
 
   it(`works without custom fragments`, () => {
     const queries = compileNodeQueries({
       schema,
       gatsbyNodeTypes: [nodeTypes.Foo, nodeTypes.Bar],
       customFragments: [],
-    })
+    });
 
-    expect(queries.size).toEqual(2)
+    expect(queries.size).toEqual(2);
     expect(printQuery(queries, `Foo`)).toEqual(dedent`
       query LIST_Foo {
         allFoo {
@@ -221,7 +221,7 @@ describe(`Happy path`, () => {
         }
       }
       fragment FooId on Foo { testId }
-    `)
+    `);
     expect(printQuery(queries, `Bar`)).toEqual(dedent`
       query LIST_Bar {
         allBar {
@@ -230,17 +230,17 @@ describe(`Happy path`, () => {
         }
       }
       fragment BarId on Bar { testId }
-    `)
-  })
+    `);
+  });
 
   it(`works with a single custom fragment`, () => {
     const queries = compileNodeQueries({
       schema,
       gatsbyNodeTypes: [nodeTypes.Foo, nodeTypes.Bar],
       customFragments: [`fragment Foo on Foo { string }`],
-    })
+    });
 
-    expect(queries.size).toEqual(2)
+    expect(queries.size).toEqual(2);
     expect(printQuery(queries, `Foo`)).toEqual(dedent`
       query LIST_Foo {
         allFoo {
@@ -257,8 +257,8 @@ describe(`Happy path`, () => {
       fragment Foo on Foo {
         string
       }
-    `)
-  })
+    `);
+  });
 
   it(`extracts node fields declared on other node type to separate fragments`, () => {
     const queries = compileNodeQueries({
@@ -269,9 +269,9 @@ describe(`Happy path`, () => {
         `fragment Bar1 on Bar { bar foo { enum } }`,
         `fragment Bar2 on Bar { foo { int } }`,
       ],
-    })
+    });
 
-    expect(queries.size).toEqual(2)
+    expect(queries.size).toEqual(2);
     expect(printQuery(queries, `Foo`)).toEqual(dedent`
       query LIST_Foo {
         allFoo {
@@ -287,7 +287,7 @@ describe(`Happy path`, () => {
       fragment Foo on Foo { string }
       fragment Bar1__foo on Foo { enum }
       fragment Bar2__foo on Foo { int }
-    `)
+    `);
     expect(printQuery(queries, `Bar`)).toEqual(dedent`
       query LIST_Bar {
         allBar {
@@ -312,8 +312,8 @@ describe(`Happy path`, () => {
           testId
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`preserves nested non-node fields`, () => {
     const fragment = `
@@ -324,14 +324,14 @@ describe(`Happy path`, () => {
           int
         }
       }
-    `
+    `;
     const queries = compileNodeQueries({
       schema,
       gatsbyNodeTypes: [nodeTypes.Bar],
       customFragments: [fragment],
-    })
+    });
 
-    expect(queries.size).toEqual(1)
+    expect(queries.size).toEqual(1);
     expect(printQuery(queries, `Bar`)).toEqual(dedent`
       query LIST_Bar {
         allBar {
@@ -353,8 +353,8 @@ describe(`Happy path`, () => {
           int
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`removes unnecessary reference fragments`, () => {
     const queries = compileNodeQueries({
@@ -367,7 +367,7 @@ describe(`Happy path`, () => {
           }
         `,
       ],
-    })
+    });
     expect(printQuery(queries, `Foo`)).toEqual(dedent`
         query LIST_Foo {
           allFoo {
@@ -384,8 +384,8 @@ describe(`Happy path`, () => {
         # fragment FooFragment__foo on Foo {
         #   testId
         # }
-    `)
-  })
+    `);
+  });
 
   it(`supports nested fragment spreads`, () => {
     const queries = compileNodeQueries({
@@ -408,7 +408,7 @@ describe(`Happy path`, () => {
           }
         `,
       ],
-    })
+    });
     expect(printQuery(queries, `Bar`)).toEqual(dedent`
       query LIST_Bar {
         allBar {
@@ -434,8 +434,8 @@ describe(`Happy path`, () => {
       fragment Foo2 on Foo {
         enum
       }
-    `)
-  })
+    `);
+  });
 
   describe(`Node referencing`, () => {
     it(`replaces other node selections with reference`, () => {
@@ -443,7 +443,7 @@ describe(`Happy path`, () => {
         schema,
         gatsbyNodeTypes: [nodeTypes.Foo, nodeTypes.Bar],
         customFragments: [`fragment Bar on Bar { foo { enum } }`],
-      })
+      });
 
       expect(printQuery(queries, `Bar`)).toEqual(dedent`
         query LIST_Bar {
@@ -460,8 +460,8 @@ describe(`Happy path`, () => {
             testId
           }
         }
-      `)
-    })
+      `);
+    });
 
     it(`supports complex ID fields`, () => {
       const queries = compileNodeQueries({
@@ -479,9 +479,9 @@ describe(`Happy path`, () => {
           }
         `,
         ],
-      })
+      });
 
-      expect(queries.size).toEqual(2)
+      expect(queries.size).toEqual(2);
       expect(printQuery(queries, `WithComplexId1`)).toEqual(dedent`
         query LIST_WithComplexId1 {
           allWithComplexId1 {
@@ -513,7 +513,7 @@ describe(`Happy path`, () => {
         fragment Bar__withComplexId1 on WithComplexId1 {
           foo
         }
-      `)
+      `);
       expect(printQuery(queries, `WithComplexId2`)).toEqual(dedent`
         query LIST_WithComplexId2 {
           allWithComplexId2 {
@@ -545,8 +545,8 @@ describe(`Happy path`, () => {
             }
           }
         }
-      `)
-    })
+      `);
+    });
 
     it(`supports node referencing in fields of a mixed interface type`, () => {
       const queries = compileNodeQueries({
@@ -568,7 +568,7 @@ describe(`Happy path`, () => {
           }
         `,
         ],
-      })
+      });
       expect(printQuery(queries, `Baz`)).toEqual(dedent`
         query LIST_Baz {
           allBaz {
@@ -602,9 +602,9 @@ describe(`Happy path`, () => {
         fragment NonNodeFragment on Foo {
           foo
         }
-      `)
-    })
-  })
+      `);
+    });
+  });
 
   describe(`Field aliasing`, () => {
     it(`aliases internal Gatsby fields on node types`, () => {
@@ -621,14 +621,14 @@ describe(`Happy path`, () => {
             children
           }
         }
-      `
+      `;
       const queries = compileNodeQueries({
         schema,
         gatsbyNodeTypes: [nodeTypes.WithGatsbyFields, nodeTypes.GatsbyFields],
         customFragments: [fragment],
-      })
+      });
 
-      expect(queries.size).toEqual(2)
+      expect(queries.size).toEqual(2);
       expect(printQuery(queries, `WithGatsbyFields`)).toEqual(dedent`
         query LIST_WithGatsbyFields {
           allWithGatsbyFields {
@@ -653,7 +653,7 @@ describe(`Happy path`, () => {
             remoteId: id
           }
         }
-      `)
+      `);
       expect(printQuery(queries, `GatsbyFields`)).toEqual(dedent`
         query LIST_GatsbyFields {
           allGatsbyFields {
@@ -673,8 +673,8 @@ describe(`Happy path`, () => {
           remoteParent: parent
           remoteChildren: children
         }
-      `)
-    })
+      `);
+    });
 
     it(`doesn't alias internal Gatsby fields on non-node types`, () => {
       const fragment = `
@@ -690,14 +690,14 @@ describe(`Happy path`, () => {
             children
           }
         }
-      `
+      `;
       const queries = compileNodeQueries({
         schema,
         gatsbyNodeTypes: [nodeTypes.WithGatsbyFields],
         customFragments: [fragment],
-      })
+      });
 
-      expect(queries.size).toEqual(1)
+      expect(queries.size).toEqual(1);
       expect(printQuery(queries, `WithGatsbyFields`)).toEqual(dedent`
         query LIST_WithGatsbyFields {
           allWithGatsbyFields {
@@ -725,8 +725,8 @@ describe(`Happy path`, () => {
             children
           }
         }
-      `)
-    })
+      `);
+    });
 
     it(`always aliases __typename`, () => {
       const fragment = `
@@ -736,14 +736,14 @@ describe(`Happy path`, () => {
             __typename
           }
         }
-      `
+      `;
       const queries = compileNodeQueries({
         schema,
         gatsbyNodeTypes: [nodeTypes.WithGatsbyFields],
         customFragments: [fragment],
-      })
+      });
 
-      expect(queries.size).toEqual(1)
+      expect(queries.size).toEqual(1);
       expect(printQuery(queries, `WithGatsbyFields`)).toEqual(dedent`
         query LIST_WithGatsbyFields {
           allWithGatsbyFields {
@@ -764,9 +764,9 @@ describe(`Happy path`, () => {
             remoteTypeName: __typename
           }
         }
-      `)
-    })
-  })
+      `);
+    });
+  });
 
   describe(`Abstract types`, () => {
     it(`includes fragments on interface type in source queries of all implementing node types`, () => {
@@ -780,9 +780,9 @@ describe(`Happy path`, () => {
             }
           `,
         ],
-      })
+      });
 
-      expect(queries.size).toEqual(2)
+      expect(queries.size).toEqual(2);
       expect(printQuery(queries, `Foo`)).toEqual(dedent`
         query LIST_Foo {
           allFoo {
@@ -797,7 +797,7 @@ describe(`Happy path`, () => {
         fragment NodeFragment on Node {
           createdAt
         }
-      `)
+      `);
       expect(printQuery(queries, `Bar`)).toEqual(dedent`
         query LIST_Bar {
           allBar {
@@ -812,8 +812,8 @@ describe(`Happy path`, () => {
         fragment NodeFragment on Node {
           createdAt
         }
-      `)
-    })
+      `);
+    });
 
     it(`replaces other node selections with reference within interface fragments`, () => {
       const queries = compileNodeQueries({
@@ -833,7 +833,7 @@ describe(`Happy path`, () => {
             }
           `,
         ],
-      })
+      });
       expect(printQuery(queries, `Bar`)).toEqual(dedent`
         query LIST_Bar {
           allBar {
@@ -862,8 +862,8 @@ describe(`Happy path`, () => {
             testId
           }
         }
-      `)
-    })
+      `);
+    });
 
     it(`adds __typename to every field of abstract type`, () => {
       const queries = compileNodeQueries({
@@ -878,8 +878,8 @@ describe(`Happy path`, () => {
           }
           `,
         ],
-      })
-      expect(queries.size).toEqual(1)
+      });
+      expect(queries.size).toEqual(1);
       expect(printQuery(queries, `Bar`)).toEqual(dedent`
         query LIST_Bar {
           allBar {
@@ -906,8 +906,8 @@ describe(`Happy path`, () => {
         fragment Bar__node on Node {
           createdAt
         }
-      `)
-    })
+      `);
+    });
 
     it(`adds __typename to every field of abstract type with listOf and nonNull wrappers`, () => {
       const queries = compileNodeQueries({
@@ -922,8 +922,8 @@ describe(`Happy path`, () => {
           }
           `,
         ],
-      })
-      expect(queries.size).toEqual(1)
+      });
+      expect(queries.size).toEqual(1);
       expect(printQuery(queries, `Bar`)).toEqual(dedent`
         query LIST_Bar {
           allBar {
@@ -950,9 +950,9 @@ describe(`Happy path`, () => {
         fragment Bar__nodeList on Node {
           createdAt
         }
-      `)
-    })
-  })
+      `);
+    });
+  });
 
   describe(`Variables`, () => {
     it(`adds variable declarations automatically`, () => {
@@ -968,9 +968,9 @@ describe(`Happy path`, () => {
           },
         ],
         customFragments: [`fragment Foo on Foo { createdAt }`],
-      })
+      });
 
-      expect(queries.size).toEqual(1)
+      expect(queries.size).toEqual(1);
       expect(printQuery(queries, `Foo`)).toEqual(dedent`
         query LIST_Foo($limit: Int, $offset: Int) {
           allFoo(limit: $limit, offset: $offset) {
@@ -987,8 +987,8 @@ describe(`Happy path`, () => {
         fragment Foo on Foo {
           createdAt
         }
-      `)
-    })
+      `);
+    });
     it(`supports complex input variables`, () => {
       const queries = compileNodeQueries({
         schema,
@@ -1002,9 +1002,9 @@ describe(`Happy path`, () => {
           },
         ],
         customFragments: [`fragment Bar on Bar { createdAt }`],
-      })
+      });
 
-      expect(queries.size).toEqual(1)
+      expect(queries.size).toEqual(1);
       expect(printQuery(queries, `Bar`)).toEqual(dedent`
         query LIST_Bar($page: Page) {
           allBar(page: $page) {
@@ -1019,8 +1019,8 @@ describe(`Happy path`, () => {
         fragment Bar on Bar {
           createdAt
         }
-      `)
-    })
+      `);
+    });
 
     it(`supports variables within complex inputs`, () => {
       const queries = compileNodeQueries({
@@ -1035,9 +1035,9 @@ describe(`Happy path`, () => {
           },
         ],
         customFragments: [`fragment Bar on Bar { createdAt }`],
-      })
+      });
 
-      expect(queries.size).toEqual(1)
+      expect(queries.size).toEqual(1);
       expect(printQuery(queries, `Bar`)).toEqual(dedent`
         query LIST_Bar($pageNumber: Int) {
           allBar(page: { pageNumber: $pageNumber }) {
@@ -1052,17 +1052,17 @@ describe(`Happy path`, () => {
         fragment Bar on Bar {
           createdAt
         }
-      `)
-    })
+      `);
+    });
 
-    it.todo(`Supports deeply nested variables`)
-    it.todo(`Supports variables within fragments`)
-    it.todo(`Supports deeply nested variables within fragments`)
-    it.todo(`Supports variables within inline fragments`)
-    it.todo(`Supports deeply nested variables within inline fragments`)
-  })
-})
+    it.todo(`Supports deeply nested variables`);
+    it.todo(`Supports variables within fragments`);
+    it.todo(`Supports deeply nested variables within fragments`);
+    it.todo(`Supports variables within inline fragments`);
+    it.todo(`Supports deeply nested variables within inline fragments`);
+  });
+});
 
 describe(`Errors`, () => {
   // TODO
-})
+});

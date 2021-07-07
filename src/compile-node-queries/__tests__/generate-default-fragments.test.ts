@@ -1,7 +1,7 @@
-import { buildSchema } from "graphql"
-import { generateDefaultFragments } from "../generate-default-fragments"
-import { dedent } from "../../__tests__/test-utils"
-import { IGatsbyNodeConfig } from "../../types"
+import { buildSchema } from "graphql";
+import { generateDefaultFragments } from "../generate-default-fragments";
+import { dedent } from "../../__tests__/test-utils";
+import { IGatsbyNodeConfig } from "../../types";
 
 const schema = buildSchema(`
   enum FooBarEnum {
@@ -120,25 +120,35 @@ const schema = buildSchema(`
     fooIface: FooConflictIface
     fooUnion: FooConflictUnion
   }
-`)
+  type Foo2 {
+    testId: ID
+    string: String
+    foo: Foo
+  }
+  type Bar2 {
+    testId: ID
+    foo: Foo2
+  }
+`);
 
 const nodeTypes: {
-  Foo: IGatsbyNodeConfig
-  Bar: IGatsbyNodeConfig
-  SelfCycle: IGatsbyNodeConfig
-  WithCycle: IGatsbyNodeConfig
-  WithTransitiveCycle: IGatsbyNodeConfig
-  WithGatsbyFields: IGatsbyNodeConfig
-  WithArguments: IGatsbyNodeConfig
-  WithIfaceFoo: IGatsbyNodeConfig
-  FooImpl1: IGatsbyNodeConfig
-  FooImpl2: IGatsbyNodeConfig
-  WithFooUnion: IGatsbyNodeConfig
-  IfaceSelfCycleImpl1: IGatsbyNodeConfig
-  IfaceSelfCycleImpl2: IGatsbyNodeConfig
-  WithIfaceSelfCycle: IGatsbyNodeConfig
-  WithFooConflict: IGatsbyNodeConfig
-  FooConflict1: IGatsbyNodeConfig
+  Foo: IGatsbyNodeConfig;
+  Bar: IGatsbyNodeConfig;
+  SelfCycle: IGatsbyNodeConfig;
+  WithCycle: IGatsbyNodeConfig;
+  WithTransitiveCycle: IGatsbyNodeConfig;
+  WithGatsbyFields: IGatsbyNodeConfig;
+  WithArguments: IGatsbyNodeConfig;
+  WithIfaceFoo: IGatsbyNodeConfig;
+  FooImpl1: IGatsbyNodeConfig;
+  FooImpl2: IGatsbyNodeConfig;
+  WithFooUnion: IGatsbyNodeConfig;
+  IfaceSelfCycleImpl1: IGatsbyNodeConfig;
+  IfaceSelfCycleImpl2: IGatsbyNodeConfig;
+  WithIfaceSelfCycle: IGatsbyNodeConfig;
+  WithFooConflict: IGatsbyNodeConfig;
+  FooConflict1: IGatsbyNodeConfig;
+  Bar2: IGatsbyNodeConfig;
 } = {
   Foo: {
     remoteTypeName: `Foo`,
@@ -252,16 +262,23 @@ const nodeTypes: {
       fragment FooConflict1Id on FooConflict1 { testId }
     `,
   },
-}
+  Bar2: {
+    remoteTypeName: `Bar2`,
+    queries: `
+      query { bar2 { ...Bar2Id } }
+      fragment Bar2Id on Bar2 { testId }
+    `,
+  },
+};
 
 describe(`simple types (scalars, objects)`, () => {
   it(`works with simple fields`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.Foo],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`Foo`)).toEqual(dedent`
       fragment Foo on Foo {
         testId
@@ -271,16 +288,16 @@ describe(`simple types (scalars, objects)`, () => {
         enum
         withWrappers
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with nested simple fields`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.Bar],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`Bar`)).toEqual(dedent`
       fragment Bar on Bar {
         testId
@@ -295,16 +312,16 @@ describe(`simple types (scalars, objects)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with fields of other node type`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.Foo, nodeTypes.Bar],
-    })
+    });
 
-    expect(result.size).toEqual(2)
+    expect(result.size).toEqual(2);
     expect(result.get(`Bar`)).toEqual(dedent`
       fragment Bar on Bar {
         testId
@@ -315,16 +332,16 @@ describe(`simple types (scalars, objects)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with self-circular node fields`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.SelfCycle],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`SelfCycle`)).toEqual(dedent`
       fragment SelfCycle on SelfCycle {
         testId
@@ -335,16 +352,16 @@ describe(`simple types (scalars, objects)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with circular node fields`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithCycle, nodeTypes.SelfCycle],
-    })
+    });
 
-    expect(result.size).toEqual(2)
+    expect(result.size).toEqual(2);
     expect(result.get(`WithCycle`)).toEqual(dedent`
       fragment WithCycle on WithCycle {
         testId
@@ -355,17 +372,17 @@ describe(`simple types (scalars, objects)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with circular non-node fields`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithCycle],
-    })
+    });
 
     // TODO: this should omit selfCycle field altogether
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`WithCycle`)).toEqual(dedent`
       fragment WithCycle on WithCycle {
         testId
@@ -378,16 +395,16 @@ describe(`simple types (scalars, objects)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with transitive cyclic non-node fields`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithTransitiveCycle],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`WithTransitiveCycle`)).toEqual(dedent`
       fragment WithTransitiveCycle on WithTransitiveCycle {
         testId
@@ -410,16 +427,16 @@ describe(`simple types (scalars, objects)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`aliases internal Gatsby fields on node types`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithGatsbyFields],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`WithGatsbyFields`)).toEqual(dedent`
       fragment WithGatsbyFields on WithGatsbyFields {
         remoteId: id
@@ -435,17 +452,17 @@ describe(`simple types (scalars, objects)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`allows providing custom field aliases`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.Foo],
       gatsbyFieldAliases: { string: `aliasedString`, enum: `aliasedEnum` },
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`Foo`)).toEqual(dedent`
       fragment Foo on Foo {
         testId
@@ -455,32 +472,32 @@ describe(`simple types (scalars, objects)`, () => {
         aliasedEnum: enum
         withWrappers
       }
-    `)
-  })
+    `);
+  });
 
   it(`includes fields with nullable arguments only (by default)`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithArguments],
-    })
+    });
 
     expect(result.get(`WithArguments`)).toEqual(dedent`
       fragment WithArguments on WithArguments {
         testId
         foo
       }
-    `)
-  })
+    `);
+  });
 
   it(`allows providing default argument values`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithArguments],
       defaultArgumentValues: [
-        field => (field.name === `bar` ? { arg: `barArg` } : undefined),
-        field => (field.name === `foo` ? { arg: `fooArg` } : undefined),
+        (field) => (field.name === `bar` ? { arg: `barArg` } : undefined),
+        (field) => (field.name === `foo` ? { arg: `fooArg` } : undefined),
       ],
-    })
+    });
 
     expect(result.get(`WithArguments`)).toEqual(dedent`
       fragment WithArguments on WithArguments {
@@ -488,20 +505,20 @@ describe(`simple types (scalars, objects)`, () => {
         foo(arg: "fooArg")
         bar(arg: "barArg")
       }
-    `)
-  })
+    `);
+  });
 
-  it.todo(`allows aliasing fields with arguments`)
-})
+  it.todo(`allows aliasing fields with arguments`);
+});
 
 describe(`abstract types (interfaces, unions)`, () => {
   it(`works with fields of non-node interface type`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithIfaceFoo],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`WithIfaceFoo`)).toEqual(dedent`
       fragment WithIfaceFoo on WithIfaceFoo {
         testId
@@ -518,8 +535,8 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with fields of node interface type`, () => {
     const result = generateDefaultFragments({
@@ -529,9 +546,9 @@ describe(`abstract types (interfaces, unions)`, () => {
         nodeTypes.FooImpl1,
         nodeTypes.FooImpl2,
       ],
-    })
+    });
 
-    expect(result.size).toEqual(3)
+    expect(result.size).toEqual(3);
     expect(result.get(`WithIfaceFoo`)).toEqual(dedent`
       fragment WithIfaceFoo on WithIfaceFoo {
         testId
@@ -542,16 +559,16 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with fields of mixed interface type`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithIfaceFoo, nodeTypes.FooImpl1],
-    })
+    });
 
-    expect(result.size).toEqual(2)
+    expect(result.size).toEqual(2);
     expect(result.get(`WithIfaceFoo`)).toEqual(dedent`
       fragment WithIfaceFoo on WithIfaceFoo {
         testId
@@ -567,16 +584,16 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with fields of non-node union type`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithFooUnion],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`WithFooUnion`)).toEqual(dedent`
       fragment WithFooUnion on WithFooUnion {
         testId
@@ -593,8 +610,8 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with fields of node union type`, () => {
     const result = generateDefaultFragments({
@@ -604,9 +621,9 @@ describe(`abstract types (interfaces, unions)`, () => {
         nodeTypes.FooImpl1,
         nodeTypes.FooImpl2,
       ],
-    })
+    });
 
-    expect(result.size).toEqual(3)
+    expect(result.size).toEqual(3);
     expect(result.get(`WithFooUnion`)).toEqual(dedent`
       fragment WithFooUnion on WithFooUnion {
         testId
@@ -621,15 +638,15 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
   it(`works with fields of mixed union type`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithFooUnion, nodeTypes.FooImpl1],
-    })
+    });
 
-    expect(result.size).toEqual(2)
+    expect(result.size).toEqual(2);
     expect(result.get(`WithFooUnion`)).toEqual(dedent`
       fragment WithFooUnion on WithFooUnion {
         testId
@@ -645,8 +662,8 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
   it(`works with circular node interface fields`, () => {
     const result = generateDefaultFragments({
       schema,
@@ -655,9 +672,9 @@ describe(`abstract types (interfaces, unions)`, () => {
         nodeTypes.IfaceSelfCycleImpl1,
         nodeTypes.IfaceSelfCycleImpl2,
       ],
-    })
+    });
 
-    expect(result.size).toEqual(3)
+    expect(result.size).toEqual(3);
     expect(result.get(`WithIfaceSelfCycle`)).toEqual(dedent`
       fragment WithIfaceSelfCycle on WithIfaceSelfCycle {
         testId
@@ -668,7 +685,7 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
+    `);
     expect(result.get(`IfaceSelfCycleImpl1`)).toEqual(dedent`
       fragment IfaceSelfCycleImpl1 on IfaceSelfCycleImpl1 {
         testId
@@ -680,7 +697,7 @@ describe(`abstract types (interfaces, unions)`, () => {
         }
         impl1
       }
-    `)
+    `);
     expect(result.get(`IfaceSelfCycleImpl2`)).toEqual(dedent`
       fragment IfaceSelfCycleImpl2 on IfaceSelfCycleImpl2 {
         testId
@@ -692,16 +709,16 @@ describe(`abstract types (interfaces, unions)`, () => {
         }
         impl2
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with circular non-node interface fields`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithIfaceSelfCycle],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`WithIfaceSelfCycle`)).toEqual(dedent`
       fragment WithIfaceSelfCycle on WithIfaceSelfCycle {
         testId
@@ -722,8 +739,8 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`works with circular mixed interface fields`, () => {
     const result = generateDefaultFragments({
@@ -732,9 +749,9 @@ describe(`abstract types (interfaces, unions)`, () => {
         nodeTypes.WithIfaceSelfCycle,
         nodeTypes.IfaceSelfCycleImpl1,
       ],
-    })
+    });
 
-    expect(result.size).toEqual(2)
+    expect(result.size).toEqual(2);
     expect(result.get(`WithIfaceSelfCycle`)).toEqual(dedent`
       fragment WithIfaceSelfCycle on WithIfaceSelfCycle {
         testId
@@ -752,7 +769,7 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
+    `);
     expect(result.get(`IfaceSelfCycleImpl1`)).toEqual(dedent`
       fragment IfaceSelfCycleImpl1 on IfaceSelfCycleImpl1 {
         testId
@@ -771,8 +788,8 @@ describe(`abstract types (interfaces, unions)`, () => {
         }
         impl1
       }
-    `)
-  })
+    `);
+  });
 
   // TODO: test transitive interface cycles
   // TODO: test invalid input
@@ -782,9 +799,9 @@ describe(`abstract types (interfaces, unions)`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithFooConflict],
-    })
+    });
 
-    expect(result.size).toEqual(1)
+    expect(result.size).toEqual(1);
     expect(result.get(`WithFooConflict`)).toEqual(dedent`
       fragment WithFooConflict on WithFooConflict {
         testId
@@ -805,16 +822,16 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
+    `);
+  });
 
   it(`includes conflicting fields of mixed interfaces when possible`, () => {
     const result = generateDefaultFragments({
       schema,
       gatsbyNodeTypes: [nodeTypes.WithFooConflict, nodeTypes.FooConflict1],
-    })
+    });
 
-    expect(result.size).toEqual(2)
+    expect(result.size).toEqual(2);
     expect(result.get(`WithFooConflict`)).toEqual(dedent`
       fragment WithFooConflict on WithFooConflict {
         testId
@@ -839,6 +856,6 @@ describe(`abstract types (interfaces, unions)`, () => {
           }
         }
       }
-    `)
-  })
-})
+    `);
+  });
+});

@@ -4,12 +4,12 @@ import {
   isInterfaceType,
   isObjectType,
   TypeNameMetaFieldDef,
-} from "graphql"
-import { GatsbyGraphQLObjectType } from "gatsby"
-import { ISchemaCustomizationContext, IGatsbyFieldInfo } from "../types"
-import { fieldTransformers } from "./transform-fields/field-transformers"
+} from "graphql";
+import { GatsbyGraphQLObjectType } from "gatsby";
+import { ISchemaCustomizationContext, IGatsbyFieldInfo } from "../types";
+import { fieldTransformers } from "./transform-fields/field-transformers";
 
-type FieldMap = NonNullable<GatsbyGraphQLObjectType["config"]["fields"]>
+type FieldMap = NonNullable<GatsbyGraphQLObjectType["config"]["fields"]>;
 
 /**
  * Transforms fields from the remote schema to work in the Gatsby schema
@@ -20,23 +20,23 @@ export function buildFields(
   context: ISchemaCustomizationContext,
   remoteTypeName: string
 ): FieldMap {
-  const remoteType = context.schema.getType(remoteTypeName)
+  const remoteType = context.schema.getType(remoteTypeName);
 
   if (!isObjectType(remoteType) && !isInterfaceType(remoteType)) {
     throw new Error(
       `Cannot build fields for ${remoteType}. ` +
         `Expecting ${remoteType} to be an object or an interface type`
-    )
+    );
   }
 
-  const fields = collectGatsbyTypeFields(context, remoteType)
+  const fields = collectGatsbyTypeFields(context, remoteType);
   return fields.reduce((fieldsConfig: FieldMap, field: IGatsbyFieldInfo) => {
-    const config = buildFieldConfig(context, field, remoteType)
+    const config = buildFieldConfig(context, field, remoteType);
     if (config) {
-      fieldsConfig[field.gatsbyFieldName] = config
+      fieldsConfig[field.gatsbyFieldName] = config;
     }
-    return fieldsConfig
-  }, Object.create(null))
+    return fieldsConfig;
+  }, Object.create(null));
 }
 
 /**
@@ -55,12 +55,12 @@ function collectGatsbyTypeFields(
   const {
     sourcingPlan: { fetchedTypeMap },
     typeNameTransform,
-  } = context
+  } = context;
 
-  const collectedFields: IGatsbyFieldInfo[] = []
+  const collectedFields: IGatsbyFieldInfo[] = [];
   const collectFromTypes = isObjectType(remoteType)
     ? [remoteType, ...remoteType.getInterfaces()]
-    : [remoteType]
+    : [remoteType];
 
   // Interface includes fields explicitly requested on interface type itself.
   //  It doesn't include any fields selected on it's implementations only.
@@ -68,7 +68,7 @@ function collectGatsbyTypeFields(
   //  necessary interface fields.
 
   for (const type of collectFromTypes) {
-    const fetchedFields = fetchedTypeMap.get(type.name) ?? []
+    const fetchedFields = fetchedTypeMap.get(type.name) ?? [];
     for (const { name, alias } of fetchedFields.values()) {
       collectedFields.push({
         gatsbyFieldName: alias,
@@ -76,10 +76,10 @@ function collectGatsbyTypeFields(
         remoteFieldAlias: alias,
         remoteParentType: remoteType.name,
         gatsbyParentType: typeNameTransform.toGatsbyTypeName(remoteType.name),
-      })
+      });
     }
   }
-  return collectedFields
+  return collectedFields;
 }
 
 function buildFieldConfig(
@@ -90,20 +90,20 @@ function buildFieldConfig(
   const remoteField =
     fieldInfo.remoteFieldName === `__typename`
       ? TypeNameMetaFieldDef
-      : remoteParentType.getFields()[fieldInfo.remoteFieldName]
+      : remoteParentType.getFields()[fieldInfo.remoteFieldName];
 
   if (!remoteField) {
     throw new Error(
       `Schema customization failed to find remote field ${fieldInfo.remoteParentType}.${fieldInfo.remoteFieldName}`
-    )
+    );
   }
 
-  const transformArgs = { remoteField, remoteParentType, fieldInfo, context }
+  const transformArgs = { remoteField, remoteParentType, fieldInfo, context };
   const fieldTransformer = fieldTransformers.find(({ test }) =>
     test(transformArgs)
-  )
+  );
 
   if (fieldTransformer) {
-    return fieldTransformer.transform(transformArgs)
+    return fieldTransformer.transform(transformArgs);
   }
 }

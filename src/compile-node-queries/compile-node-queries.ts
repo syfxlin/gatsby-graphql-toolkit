@@ -6,39 +6,39 @@ import {
   TypeInfo,
   visit,
   visitWithTypeInfo,
-} from "graphql"
-import { flatMap } from "lodash"
-import { defaultGatsbyFieldAliases } from "../config/default-gatsby-field-aliases"
-import { addVariableDefinitions } from "./ast-transformers/add-variable-definitions"
-import { aliasGatsbyNodeFields } from "./ast-transformers/alias-gatsby-node-fields"
-import { addNodeFragmentSpreadsAndTypename } from "./ast-transformers/add-node-fragment-spreads-and-typename"
-import { removeUnusedFragments } from "./ast-transformers/remove-unused-fragments"
+} from "graphql";
+import { flatMap } from "lodash";
+import { defaultGatsbyFieldAliases } from "../config/default-gatsby-field-aliases";
+import { addVariableDefinitions } from "./ast-transformers/add-variable-definitions";
+import { aliasGatsbyNodeFields } from "./ast-transformers/alias-gatsby-node-fields";
+import { addNodeFragmentSpreadsAndTypename } from "./ast-transformers/add-node-fragment-spreads-and-typename";
+import { removeUnusedFragments } from "./ast-transformers/remove-unused-fragments";
 import {
   compileNodeFragments,
   compileNonNodeFragments,
-} from "./compile-fragments"
+} from "./compile-fragments";
 import {
   GraphQLSource,
   ICompileQueriesContext,
   IGatsbyFieldAliases,
   IGatsbyNodeConfig,
   RemoteTypeName,
-} from "../types"
-import { isFragment } from "../utils/ast-predicates"
-import { promptUpgradeIfRequired } from "../utils/upgrade-prompt"
-import { buildNodeReferenceFragmentMap } from "./analyze/build-node-reference-fragment-map"
-import { buildTypeUsagesMap } from "./analyze/build-type-usages-map"
-import { selectionSetIncludes } from "../utils/ast-compare"
-import { addRemoteTypeNameField } from "./ast-transformers/add-remote-typename-field"
-import * as GraphQLAST from "../utils/ast-nodes"
+} from "../types";
+import { isFragment } from "../utils/ast-predicates";
+import { promptUpgradeIfRequired } from "../utils/upgrade-prompt";
+import { buildNodeReferenceFragmentMap } from "./analyze/build-node-reference-fragment-map";
+import { buildTypeUsagesMap } from "./analyze/build-type-usages-map";
+import { selectionSetIncludes } from "../utils/ast-compare";
+import { addRemoteTypeNameField } from "./ast-transformers/add-remote-typename-field";
+import * as GraphQLAST from "../utils/ast-nodes";
 
 interface ICompileNodeQueriesArgs {
-  schema: GraphQLSchema
-  gatsbyNodeTypes: IGatsbyNodeConfig[]
-  gatsbyFieldAliases?: IGatsbyFieldAliases
+  schema: GraphQLSchema;
+  gatsbyNodeTypes: IGatsbyNodeConfig[];
+  gatsbyFieldAliases?: IGatsbyFieldAliases;
   customFragments:
     | Array<GraphQLSource | string>
-    | Map<RemoteTypeName, GraphQLSource | string>
+    | Map<RemoteTypeName, GraphQLSource | string>;
 }
 
 /**
@@ -48,9 +48,9 @@ interface ICompileNodeQueriesArgs {
 export function compileNodeQueries(
   args: ICompileNodeQueriesArgs
 ): Map<RemoteTypeName, DocumentNode> {
-  promptUpgradeIfRequired(args.gatsbyNodeTypes)
-  const context = createCompilationContext(args)
-  const nodeFragmentMap = compileNodeFragments(context)
+  promptUpgradeIfRequired(args.gatsbyNodeTypes);
+  const context = createCompilationContext(args);
+  const nodeFragmentMap = compileNodeFragments(context);
 
   // Node fragments may still spread non-node fragments
   // For example:
@@ -66,20 +66,20 @@ export function compileNodeQueries(
   //
   // So we add all non node fragments to all documents, but then
   // filtering out unused fragments
-  const allNonNodeFragments = compileNonNodeFragments(context)
+  const allNonNodeFragments = compileNonNodeFragments(context);
 
-  const documents = new Map<RemoteTypeName, DocumentNode>()
-  args.gatsbyNodeTypes.forEach(config => {
+  const documents = new Map<RemoteTypeName, DocumentNode>();
+  args.gatsbyNodeTypes.forEach((config) => {
     const def = compileDocument(
       context,
       config.remoteTypeName,
       nodeFragmentMap.get(config.remoteTypeName) ?? [],
       allNonNodeFragments
-    )
-    documents.set(config.remoteTypeName, def)
-  })
+    );
+    documents.set(config.remoteTypeName, def);
+  });
 
-  return documents
+  return documents;
 }
 
 function compileDocument(
@@ -88,12 +88,12 @@ function compileDocument(
   nodeFragments: FragmentDefinitionNode[],
   nonNodeFragments: FragmentDefinitionNode[]
 ): DocumentNode {
-  const queries = context.originalConfigQueries.get(remoteTypeName)
+  const queries = context.originalConfigQueries.get(remoteTypeName);
 
   if (!queries) {
     throw new Error(
       `Could not find "queries" config for type "${remoteTypeName}"`
-    )
+    );
   }
 
   // Remove redundant node fragments that contain the same fields as the id fragment
@@ -102,26 +102,26 @@ function compileDocument(
     context,
     nodeFragments,
     getIdFragment(remoteTypeName, queries)
-  )
+  );
 
-  const typeInfo = new TypeInfo(context.schema)
+  const typeInfo = new TypeInfo(context.schema);
 
   let fragmentsDocument = GraphQLAST.document([
     ...prettifiedNodeFragments,
     ...nonNodeFragments,
-  ])
+  ]);
 
   // Adding automatic __typename to custom fragments only
   // (original query and ID fragment must not be altered)
   fragmentsDocument = visit(
     fragmentsDocument,
     visitWithTypeInfo(typeInfo, addRemoteTypeNameField({ typeInfo }))
-  )
+  );
 
   const fullDocument: DocumentNode = {
     ...queries,
     definitions: [...queries.definitions, ...fragmentsDocument.definitions],
-  }
+  };
 
   // Expected query variants:
   //  1. { allUser { ...IDFragment } }
@@ -135,18 +135,18 @@ function compileDocument(
   let doc: DocumentNode = visit(
     fullDocument,
     addNodeFragmentSpreadsAndTypename(prettifiedNodeFragments)
-  )
+  );
 
   doc = visit(
     doc,
     visitWithTypeInfo(typeInfo, aliasGatsbyNodeFields({ ...context, typeInfo }))
-  )
+  );
   doc = visit(
     doc,
     visitWithTypeInfo(typeInfo, addVariableDefinitions({ typeInfo }))
-  )
+  );
 
-  return visit(doc, removeUnusedFragments())
+  return visit(doc, removeUnusedFragments());
 }
 
 function getIdFragment(
@@ -154,13 +154,13 @@ function getIdFragment(
   doc: DocumentNode
 ): FragmentDefinitionNode {
   // Assume ID fragment is listed first
-  const idFragment = doc.definitions.find(isFragment)
+  const idFragment = doc.definitions.find(isFragment);
   if (!idFragment) {
     throw new Error(
       `Missing ID Fragment in type config for "${remoteTypeName}"`
-    )
+    );
   }
-  return idFragment
+  return idFragment;
 }
 
 function removeIdFragmentDuplicates(
@@ -181,17 +181,17 @@ function removeIdFragmentDuplicates(
   // }
   // So before comparing selections we must "normalize" both to the form they
   // will be in the actual query
-  const typeInfo = new TypeInfo(context.schema)
-  let fragmentsWithAliases = GraphQLAST.document(fragments)
+  const typeInfo = new TypeInfo(context.schema);
+  let fragmentsWithAliases = GraphQLAST.document(fragments);
 
   const idFragmentWithAliases = visit(
     idFragment,
     visitWithTypeInfo(typeInfo, aliasGatsbyNodeFields({ ...context, typeInfo }))
-  )
+  );
   fragmentsWithAliases = visit(
     fragmentsWithAliases,
     visitWithTypeInfo(typeInfo, aliasGatsbyNodeFields({ ...context, typeInfo }))
-  )
+  );
   const deduped = new Set(
     fragmentsWithAliases.definitions
       .filter(
@@ -203,21 +203,21 @@ function removeIdFragmentDuplicates(
             def.selectionSet
           )
       )
-      .map(fragment => fragment.name.value)
-  )
-  return fragments.filter(f => deduped.has(f.name.value))
+      .map((fragment) => fragment.name.value)
+  );
+  return fragments.filter((f) => deduped.has(f.name.value));
 }
 
 function createCompilationContext(
   args: ICompileNodeQueriesArgs
 ): ICompileQueriesContext {
-  const allFragmentDocs: DocumentNode[] = []
-  args.customFragments.forEach(fragmentString => {
-    allFragmentDocs.push(parse(fragmentString))
-  })
-  const fragments = flatMap(allFragmentDocs, doc =>
+  const allFragmentDocs: DocumentNode[] = [];
+  args.customFragments.forEach((fragmentString) => {
+    allFragmentDocs.push(parse(fragmentString));
+  });
+  const fragments = flatMap(allFragmentDocs, (doc) =>
     doc.definitions.filter(isFragment)
-  )
+  );
   return {
     schema: args.schema,
     nodeReferenceFragmentMap: buildNodeReferenceFragmentMap(args),
@@ -232,5 +232,5 @@ function createCompilationContext(
     ),
     originalCustomFragments: fragments,
     gatsbyFieldAliases: args.gatsbyFieldAliases ?? defaultGatsbyFieldAliases,
-  }
+  };
 }
